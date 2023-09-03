@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solarflow Control</title>
+    
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script-->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.0/dist/jquery.min.js"></script>
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script-->
+    <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script-->
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <link
+      href="//mincss.com/entireframework.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="{{url_for('static', filename = 'css/app.css')}}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  </head>
+  <body>
+    <script type="text/javascript" src="{{ url_for('static', filename = 'js/app.js') }}"></script>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm">
+          <div class="hero">
+            <table width="100%">
+              <tr>
+                <td class="key">Product:</td><td class="value">{{ productName }}</td>
+              </tr>
+              <tr>
+                <td class="key">Serial #:</td><td class="value">{{ snNumber }}</td>
+              </tr>
+              <tr>
+                <td class="key">WiFi:</td><td class="value">{{ wifiName }} ({{ wifiState }})</td>
+              </tr>
+              <tr>
+                <td class="key">IP:</td><td class="value">{{ ip }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <table width="100%">
+              <tr>
+                <td class="key">Batteries:</td><td class="value">{{ packNum }}</td>
+              </tr>
+              <tr>
+                <td class="key">Max Charge Level:</td><td class="value" id="state-socSet">{{ socSet/10 }} %</td>
+              </tr>
+              <tr>
+                <td class="key">Max Discharge Level:</td><td class="value" id="state-minSoc">{{ minSoc/10 }} %</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <table width="100%">
+              <tr>
+                <td class="key">Max Inverter Input:</td><td class="value">{{ inverseMaxPower }} W</td>
+              </tr>
+              <tr>
+                <td class="key">Input Limit:</td><td class="value" id="state-inputLimit">{{ inputLimit }} W</td>
+              </tr>
+              <tr>
+                <td class="key">Output Limit:</td><td class="value" id="state-outputLimit">{{ outputLimit }} W</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Output to Home (<span id="cur-outputHome"></span> W)</h1>
+            <div class="chart-container">
+              <canvas id="outputHome" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Solar Input (<span id="cur-solarInput"></span> W)</h1>
+            <div class="chart-container">
+              <canvas id="solarInput" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Charging/Discharging (<span id="cur-outputPack"></span> W)</h1>
+            <div class="chart-container">
+              <canvas id="outputPack" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm">
+          <form class="form-inline" id="form-outputHomeLimit">
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="outputHomeLimit" class="sr-only">Limit</label>
+              <input type="number" class="form-control" id="outputHomeLimit" min="1" max="800" placeholder="100">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Set Limit</button>
+          </form>
+        </div>
+        <div class="col-sm">
+          <form class="form-inline" id="form-solarInputLimit">
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="solarInputLimit" class="sr-only">Limit</label>
+              <input type="number" class="form-control" id="solarInputLimit" min="1" max="1100" placeholder="100">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Set Limit</button>
+          </form>
+        </div>
+        <div class="col-sm"></div>
+      </div>
+      <div class="row">
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Average Battery level (%)</h1>
+            <div class="chart-container">
+              <canvas id="electricLevel" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Battery Temperature (˚C)</h1>
+            <div class="chart-container">
+              <canvas id="maxTemp" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Battery State of Charge (%)</h1>
+            <div class="chart-container">
+              <canvas id="socLevel" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm">
+          <form class="form-inline" id="form-socSet">
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="socSet" class="sr-only">Limit</label>
+              <input type="number" class="form-control" id="socSet" min="20" max="100" placeholder="100">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Charge Limit</button>
+          </form>
+        </div>
+        <div class="col-sm">
+          <form class="form-inline" id="form-minSoc">
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="minSoc" class="sr-only">Limit</label>
+              <input type="number" class="form-control" id="minSoc" min="5" max="100" placeholder="10">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Discharge Limit</button>
+          </form>
+        </div>
+        <div class="col-sm"></div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Max Cell Voltage</h1>
+            <div class="chart-container">
+              <canvas id="maxVol" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Min Cell Voltage</h1>
+            <div class="chart-container">
+              <canvas id="minVol" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Battery Voltage</h1>
+            <div class="chart-container">
+              <canvas id="totalVol" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

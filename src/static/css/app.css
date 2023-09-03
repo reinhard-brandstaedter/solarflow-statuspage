@@ -1,0 +1,25 @@
+.hero {
+    background: #eee;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 1em;
+}
+
+.hero h1 {
+    margin-top: 0;
+    margin-bottom: 0.3em;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.chart-container {
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+td.key {
+    font-weight: bold;
+}
+td.value {
+
+}
