@@ -57,7 +57,7 @@ def on_solarflow_update(msg):
     global device_details
     global local_client
     payload = json.loads(msg)
-    if "properties" in payload:
+    if "_properties_" in payload:
         log.info(payload["properties"])
         if "outputHomePower" in payload["properties"]:
             local_client.publish("solarflow-hub/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
@@ -113,6 +113,35 @@ def on_solarflow_update(msg):
                             dev_pack["maxTemp"] = pack["maxTemp"]
 
 
+def on_local_message(client, userdata, msg):
+    property = msg.topic.split('/')[-1]
+    payload = msg.payload.decode()
+
+    if "outputHomePower" == property:
+        socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': payload, 'date': round(time.time()*1000)})
+    if "solarInputPower" == property:
+        socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': payload, 'date': round(time.time()*1000)})
+    if "outputPackPower" == property:
+        socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -payload, 'date': round(time.time()*1000)})
+    if "packInputPower" == property:
+        socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': payload, 'date': round(time.time()*1000)})
+    if "electricLevel" == property:
+        socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': payload, 'date': round(time.time()*1000)})
+        device_details["electricLevel"] = payload
+    if "outputLimit" == property:
+        socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
+        device_details["outputLimit"] = payload
+    if "inputLimit" == property:
+        socketio.emit('updateLimit', {'property': 'inputLimit', 'value': f'{payload} W'})
+        device_details["inputLimit"] = payload
+    if "socSet" == property:
+        socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload/10} %'})
+        device_details["socSet"] = payload
+    if "minSoc" == property:
+        socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload/10} %'})
+        device_details["minSoc"] = payload
+
+
 def on_message(client, userdata, msg):
     on_solarflow_update(msg.payload.decode())
 
@@ -137,6 +166,16 @@ def connect_mqtt(client_id) -> mqtt_client:
     client.connect(broker, port)
     return client
 
+def connect_local_mqtt():
+    global local_client
+    global local_port
+    local_client = mqtt_client.Client(client_id="solarflow-statuspage")
+    local_client.reconnect_delay_set(min_delay=1, max_delay=120)
+    local_client.on_connect = on_connect
+    local_client.on_disconnect = on_disconnect
+    local_client.connect(local_broker,local_port)
+    return local_client
+
 def subscribe(client: mqtt_client, auth: ZenAuth):
     # list of topics to subscribe
     report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
@@ -144,6 +183,11 @@ def subscribe(client: mqtt_client, auth: ZenAuth):
     client.subscribe(report_topic)
     client.subscribe(iot_topic)
     client.on_message = on_message
+
+def subscribe_local(client: mqtt_client):
+    telemetry_topic = "solarflow-hub/telemetry/#"
+    client.subscribe(telemetry_topic)
+    client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
     global auth
@@ -161,23 +205,28 @@ def get_auth() -> ZenAuth:
 
 def mqtt_background_task():
     client = None
+    #while client is None:
+    try:
+        auth = get_auth()
+        #client = connect_mqtt(auth.clientId)
+    except:
+        log.warning("Connecting to MQTT broker failed!")
+        time.sleep(10)
+
+    #subscribe(client,auth)
+    #client.loop_start()
+
+def local_mqtt_background_task():
+    client = None
     while client is None:
         try:
-            auth = get_auth()
-            client = connect_mqtt(auth.clientId)
+            client = connect_local_mqtt()
         except:
-            log.warning("Connecting to MQTT broker failed!")
+            log.warning("Connecting to local MQTT broker failed!")
             time.sleep(10)
     
-    subscribe(client,auth)
+    subscribe_local(client)
     client.loop_start()
-
-def local_mqtt_connect():
-    global local_client
-    global local_port
-    local_client = mqtt_client.Client(client_id="solarflow-statuspage")
-    local_client.connect(local_broker,local_port)
-    local_client.on_connect = on_connect
 
 @app.route('/')
 def index():
@@ -199,13 +248,13 @@ def connect():
 
 @socketio.on('setLimit')
 def setLimit(msg):
-    global client
+    global local_client
     
     jmsg = json.loads(msg)
     log.info(jmsg)
     payload = {"properties": { jmsg["property"]: int(jmsg["value"]) }}
     log.info(json.dumps(payload))
-    client.publish(f'iot/{auth.productKey}/{auth.deviceKey}/properties/write', json.dumps(payload))
+    local_client.publish(f'iot/{auth.productKey}/{auth.deviceKey}/properties/write', json.dumps(payload))
 
 @socketio.on('disconnect')
 def disconnect():
@@ -216,6 +265,6 @@ if __name__ == '__main__':
     mqtt_background_task()
 
     # connect to local mqtt
-    local_mqtt_connect()
+    local_mqtt_background_task()
     
     socketio.run(app,host="0.0.0.0",allow_unsafe_werkzeug=True)
