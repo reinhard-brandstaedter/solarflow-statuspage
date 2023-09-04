@@ -123,6 +123,11 @@ def on_local_message(client, userdata, msg):
             payload = float(payload)/100
         socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
     else:
+        try:
+            payload = int(payload)
+        except:
+            log.error(f'Error converting payload to int: {payload}')
+
         if "outputHomePower" == property:
             socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': int(payload), 'date': round(time.time()*1000)})
         if "solarInputPower" == property:
@@ -146,8 +151,9 @@ def on_local_message(client, userdata, msg):
         if "minSoc" == property:
             socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload/10} %'})
             device_details["minSoc"] = payload
-    
-
+        if "inverseMaxPower" == property:
+            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload} W'})
+            device_details["inverseMaxPower"] = payload
 
 def on_message(client, userdata, msg):
     on_solarflow_update(msg.payload.decode())
