@@ -117,29 +117,36 @@ def on_local_message(client, userdata, msg):
     property = msg.topic.split('/')[-1]
     payload = msg.payload.decode()
 
-    if "outputHomePower" == property:
-        socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': int(payload), 'date': round(time.time()*1000)})
-    if "solarInputPower" == property:
-        socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': int(payload), 'date': round(time.time()*1000)})
-    if "outputPackPower" == property:
-        socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -int(payload), 'date': round(time.time()*1000)})
-    if "packInputPower" == property:
-        socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': int(payload), 'date': round(time.time()*1000)})
-    if "electricLevel" == property:
-        socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': int(payload), 'date': round(time.time()*1000)})
-        device_details["electricLevel"] = payload
-    if "outputLimit" == property:
-        socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
-        device_details["outputLimit"] = payload
-    if "inputLimit" == property:
-        socketio.emit('updateLimit', {'property': 'inputLimit', 'value': f'{payload} W'})
-        device_details["inputLimit"] = payload
-    if "socSet" == property:
-        socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload/10} %'})
-        device_details["socSet"] = payload
-    if "minSoc" == property:
-        socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload/10} %'})
-        device_details["minSoc"] = payload
+    if "batteries" in msg.topic:
+        sn = msg.topic.split('/')[-2]
+        if property not in  ["socLevel", "power"]:
+            payload = float(payload)/100
+        socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
+    else:
+        if "outputHomePower" == property:
+            socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': int(payload), 'date': round(time.time()*1000)})
+        if "solarInputPower" == property:
+            socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': int(payload), 'date': round(time.time()*1000)})
+        if "outputPackPower" == property:
+            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -int(payload), 'date': round(time.time()*1000)})
+        if "packInputPower" == property:
+            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': int(payload), 'date': round(time.time()*1000)})
+        if "electricLevel" == property:
+            socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': int(payload), 'date': round(time.time()*1000)})
+            device_details["electricLevel"] = payload
+        if "outputLimit" == property:
+            socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
+            device_details["outputLimit"] = payload
+        if "inputLimit" == property:
+            socketio.emit('updateLimit', {'property': 'inputLimit', 'value': f'{payload} W'})
+            device_details["inputLimit"] = payload
+        if "socSet" == property:
+            socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload/10} %'})
+            device_details["socSet"] = payload
+        if "minSoc" == property:
+            socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload/10} %'})
+            device_details["minSoc"] = payload
+    
 
 
 def on_message(client, userdata, msg):
