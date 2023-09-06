@@ -3,7 +3,8 @@
 The Solarflow Statuspage is an alternative to the mobile app. It gives a quick overview of the status of the hub, providing realtime data of the output to home, the current solar power generated and the battery charging power as well as the temperature nad individual battiers connected to your hub.
 It also allows you manually to control the output to home and the battery charging limit.
 
-![solarflow status page](img/solarflow_statuspage.png)
+![solarflow status page](src/img/solarflow_statuspage.png)
+
 
 ## How to use
 
