@@ -26,6 +26,8 @@ ZEN_PASSWD=<your zendure account password>
 Additional environment variables
 ```
 MQTT_HOST=<ip-adress of local MQTT_HOST>
+MQTT_USER=<local username>
+MQTT_PW=<password for local MQTT user>
 ```
 
 
@@ -43,7 +45,7 @@ The Solarflow statuspage is not protected in any way. It is intended to run in a
 
 ## Run on Synology Docker app --> Container Manager
 Go to Container
-select create
-"Image" add Image
-search for solorflow
-for Network select bridge and map ports like 3500 to 5000 tcp/udp
+* select create
+* "Image" add Image
+* search for solorflow
+*for Network select bridge and map ports like 3500 to 5000 tcp/udp
