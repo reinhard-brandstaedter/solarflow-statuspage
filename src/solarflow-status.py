@@ -20,6 +20,8 @@ ZEN_USER = os.environ.get('ZEN_USER',None)
 ZEN_PASSWD = os.environ.get('ZEN_PASSWD',None)
 MQTT_HOST = os.environ.get('MQTT_HOST',None)
 MQTT_PORT = os.environ.get('MQTT_PORT',1883)
+MQTT_USER = os.environ.get('MQTT_USER',None)
+MQTT_PW = os.environ.get('MQTT_PW',None)
 
 if ZEN_USER is None or ZEN_PASSWD is None:
     log.error("No username and password environment variable set (environment variable ZEN_USER, ZEN_PASSWD)!")
@@ -57,22 +59,22 @@ def on_solarflow_update(msg):
     global device_details
     global local_client
     payload = json.loads(msg)
-    if "_properties_" in payload:
+    if "properties" in payload:
         log.info(payload["properties"])
         if "outputHomePower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
+            local_client.publish("solarflow-zen/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
             socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': payload["properties"]["outputHomePower"], 'date': round(time.time()*1000)})
         if "solarInputPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/solarInputPower",payload["properties"]["solarInputPower"])
+            local_client.publish("solarflow-zen/telemetry/solarInputPower",payload["properties"]["solarInputPower"])
             socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': payload["properties"]["solarInputPower"], 'date': round(time.time()*1000)})
         if "outputPackPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/outputPackPower",payload["properties"]["outputPackPower"])
+            local_client.publish("solarflow-zen/telemetry/outputPackPower",payload["properties"]["outputPackPower"])
             socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -payload["properties"]["outputPackPower"], 'date': round(time.time()*1000)})
         if "packInputPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/packInputPower",payload["properties"]["packInputPower"])
+            local_client.publish("solarflow-zen/telemetry/packInputPower",payload["properties"]["packInputPower"])
             socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': payload["properties"]["packInputPower"], 'date': round(time.time()*1000)})
         if "electricLevel" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/electricLevel",payload["properties"]["electricLevel"])
+            local_client.publish("solarflow-zen/telemetry/electricLevel",payload["properties"]["electricLevel"])
             socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': payload["properties"]["electricLevel"], 'date': round(time.time()*1000)})
             device_details["electricLevel"] = payload["properties"]["electricLevel"]
         if "outputLimit" in payload["properties"]:
@@ -183,6 +185,8 @@ def connect_local_mqtt():
     global local_client
     global local_port
     local_client = mqtt_client.Client(client_id="solarflow-statuspage")
+    if MQTT_USER is not None and MQTT_PW is not None:
+        local_client.username_pw_set(MQTT_USER, MQTT_PW)
     local_client.reconnect_delay_set(min_delay=1, max_delay=120)
     local_client.on_connect = on_connect
     local_client.on_disconnect = on_disconnect
