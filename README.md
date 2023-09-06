@@ -22,6 +22,12 @@ ZEN_USER=<your zendure account>
 ZEN_PASSWD=<your zendure account password>
 ```
 
+Additional environment variables
+```
+MQTT_HOST=<ip-adress of local MQTT_HOST>
+```
+
+
 Then run the container and expose it's port to a local port:
 ```
 docker run -d --rm --env-file .env -p 127.0.0.1:5000:5000 --name solarflow-statuspage rbrandstaedter/solarflow-statuspage:latest
@@ -32,3 +38,11 @@ You should see a page like above. After a few seconds you should see the charts 
 
 ## Notes
 The Solarflow statuspage is not protected in any way. It is intended to run in a safe local-network environment and not meant to be exposed outside without any additional protection.
+
+
+## Run on Synology Docker app --> Container Manager
+Go to Container
+select create
+"Image" add Image
+search for solorflow
+for Network select bridge and map ports like 3500 to 5000 tcp/udp
