@@ -48,4 +48,4 @@ Go to Container
 * select create
 * "Image" add Image
 * search for solorflow
-*for Network select bridge and map ports like 3500 to 5000 tcp/udp
+* for Network select bridge and map ports like 3500 to 5000 tcp/udp
