@@ -117,10 +117,16 @@ def on_local_message(client, userdata, msg):
     payload = msg.payload.decode()
 
     # determine deviceID and productID
-    if "properties/report" in msg.topic:
+    if "properties/report/write" in msg.topic:
         parts = msg.topic.split('/')
         device_details["productKey"] = parts[1]
         device_details["deviceKey"] = parts[2]
+
+    # act as a forwarder for write commands on local MQTT
+    if "properties/write" in msg.topic:
+        if not offline_mode:
+            log.info("Online mode: forwarding limit command to Zendure Cloud")
+            set_zendure_limit(json.dumps(payload))
 
     if "batteries" in msg.topic:
         sn = msg.topic.split('/')[-2]
@@ -221,6 +227,7 @@ def local_subscribe(client: mqtt_client):
     telemetry_topic = "solarflow-hub/telemetry/#"
     client.subscribe(telemetry_topic)
     client.subscribe("/73bkTV/+/properties/report")
+    client.subscribe("iot/73bkTV/+/properties/write")
     client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
@@ -245,7 +252,7 @@ def zendure_mqtt_background_task():
             client = connect_zendure_mqtt(auth.clientId)
         except:
             log.exception("Connecting to Zendure's MQTT broker failed!")
-            time.sleep(10)
+            sys.exit(0)
 
     zendure_subscribe(client,auth)
     client.loop_start()
@@ -284,10 +291,14 @@ def connect():
             socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': battery["maxTemp"]/10 if battery["maxTemp"] < 1000 else battery["maxTemp"]/100  , 'date': battery["sn"]})
 
 def set_local_limit(payload):
+    global local_client
     local_client.publish(f'iot/{device_details["productKey"]}/{device_details["deviceKey"]}/properties/write', payload)
+    log.info(f'Publishing offline limit command: {payload}')
 
 def set_zendure_limit(payload):
+    global zendure_client
     zendure_client.publish(f'iot/{device_details["productKey"]}/{device_details["deviceKey"]}/properties/write', payload)
+    log.info(f'Publishing online limit command: {payload}')
 
 @socketio.on('setLimit')
 def setLimit(msg):
@@ -316,9 +327,14 @@ def setup(offline):
         if ZEN_USER is None or ZEN_PASSWD is None:
             log.error("No username and password environment variable set (environment variable ZEN_USER, ZEN_PASSWD)!")
             sys.exit(0)
-            
-        # starting mqtt network loop
+
+        # connect to zendure mqtt
         zendure_mqtt_background_task()
+
+        # connect to local mqtt
+        local_mqtt_background_task()
+
+        
 
     socketio.run(app,host="0.0.0.0",allow_unsafe_werkzeug=True)
 
