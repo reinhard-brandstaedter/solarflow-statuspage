@@ -58,19 +58,19 @@ def on_zendure_message(client, userdata, msg):
     if "properties/report" in msg.topic:
         log.info(payload["properties"])
         if "outputHomePower" in payload["properties"]:
-            local_client.publish("solarflow-zen/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
+            local_client.publish("solarflow-hub/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
             socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': payload["properties"]["outputHomePower"], 'date': round(time.time()*1000)})
         if "solarInputPower" in payload["properties"]:
-            local_client.publish("solarflow-zen/telemetry/solarInputPower",payload["properties"]["solarInputPower"])
+            local_client.publish("solarflow-hub/telemetry/solarInputPower",payload["properties"]["solarInputPower"])
             socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': payload["properties"]["solarInputPower"], 'date': round(time.time()*1000)})
         if "outputPackPower" in payload["properties"]:
-            local_client.publish("solarflow-zen/telemetry/outputPackPower",payload["properties"]["outputPackPower"])
+            local_client.publish("solarflow-hub/telemetry/outputPackPower",payload["properties"]["outputPackPower"])
             socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -payload["properties"]["outputPackPower"], 'date': round(time.time()*1000)})
         if "packInputPower" in payload["properties"]:
-            local_client.publish("solarflow-zen/telemetry/packInputPower",payload["properties"]["packInputPower"])
+            local_client.publish("solarflow-hub/telemetry/packInputPower",payload["properties"]["packInputPower"])
             socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': payload["properties"]["packInputPower"], 'date': round(time.time()*1000)})
         if "electricLevel" in payload["properties"]:
-            local_client.publish("solarflow-zen/telemetry/electricLevel",payload["properties"]["electricLevel"])
+            local_client.publish("solarflow-hub/telemetry/electricLevel",payload["properties"]["electricLevel"])
             socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': payload["properties"]["electricLevel"], 'date': round(time.time()*1000)})
             device_details["electricLevel"] = payload["properties"]["electricLevel"]
         if "outputLimit" in payload["properties"]:
