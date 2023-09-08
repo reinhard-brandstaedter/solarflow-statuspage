@@ -2,19 +2,17 @@ from zenapi import ZendureAPI as zapp
 import json, time, logging, sys, os
 from datetime import datetime
 import time
-from functools import reduce
 from paho.mqtt import client as mqtt_client
 from collections import namedtuple
-from flask import Flask, render_template, request
+from flask import Flask, render_template
 from flask_socketio import SocketIO
-from random import random
+import random
 from threading import Lock
+import click
 
 FORMAT = '%(asctime)s:%(levelname)s: %(message)s'
 logging.basicConfig(stream=sys.stdout, level="INFO", format=FORMAT)
 log = logging.getLogger("")
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("requests").setLevel(logging.WARNING)
 
 ZEN_USER = os.environ.get('ZEN_USER',None)
 ZEN_PASSWD = os.environ.get('ZEN_PASSWD',None)
@@ -23,9 +21,6 @@ MQTT_PORT = os.environ.get('MQTT_PORT',1883)
 MQTT_USER = os.environ.get('MQTT_USER',None)
 MQTT_PW = os.environ.get('MQTT_PW',None)
 
-if ZEN_USER is None or ZEN_PASSWD is None:
-    log.error("No username and password environment variable set (environment variable ZEN_USER, ZEN_PASSWD)!")
-    sys.exit(0)
 
 if MQTT_HOST is None:
     log.error("You need a local MQTT broker set (environment variable MQTT_HOST)!")
@@ -36,13 +31,14 @@ ZenAuth = namedtuple("ZenAuth",["productKey","deviceKey","clientId"])
 # MQTT broker where we subscribe to all the telemetry data we need to steer
 broker = 'mq.zen-iot.com'
 port = 1883
-client: mqtt_client
+zendure_client: mqtt_client
 
 local_broker = MQTT_HOST
 local_port = MQTT_PORT
 local_client: mqtt_client
+offline_mode: bool
 auth: ZenAuth
-device_details = {}
+device_details = {"productName": "n/a", "snNumber": "n/a", "wifiName": "n/a", "wifiState": "n/a", "ip": "n/a", "packNum": "0", "socSet": 0, "minSoc": 0, "inverseMaxPower":0, "inputLimit":0, "outputLimit":0}
 
 # Flask SocketIO background task
 thread = None
@@ -55,11 +51,11 @@ def get_current_datetime():
     now = datetime.now()
     return now.strftime("%H:%M:%S")
 
-def on_solarflow_update(msg):
+def on_zendure_message(client, userdata, msg):
     global device_details
     global local_client
-    payload = json.loads(msg)
-    if "properties" in payload:
+    payload = msg.payload.decode()
+    if "properties/report" in msg.topic:
         log.info(payload["properties"])
         if "outputHomePower" in payload["properties"]:
             local_client.publish("solarflow-zen/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
@@ -116,15 +112,25 @@ def on_solarflow_update(msg):
 
 
 def on_local_message(client, userdata, msg):
+    global device_details
     property = msg.topic.split('/')[-1]
     payload = msg.payload.decode()
+
+    # determine deviceID and productID
+    if "properties/report" in msg.topic:
+        parts = msg.topic.split('/')
+        device_details["productKey"] = parts[1]
+        device_details["deviceKey"] = parts[2]
 
     if "batteries" in msg.topic:
         sn = msg.topic.split('/')[-2]
         if property not in  ["socLevel", "power"]:
             payload = float(payload)/100
-        socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
-    else:
+
+        if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
+            socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
+
+    if "solarflow-hub" in msg.topic:
         try:
             payload = int(payload)
         except:
@@ -156,54 +162,65 @@ def on_local_message(client, userdata, msg):
         if "inverseMaxPower" == property:
             socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload} W'})
             device_details["inverseMaxPower"] = payload
+        if "packNum" == property:
+            socketio.emit('updateLimit', {'property': 'packNum', 'value': f'{payload}'})
+            device_details["packNum"] = payload
+        if "wifiState" == property:
+            socketio.emit('updateLimit', {'property': 'wifiState', 'value': f'{payload} W'})
+            device_details["wifiState"] = payload
 
-def on_message(client, userdata, msg):
-    on_solarflow_update(msg.payload.decode())
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        log.info("Connected to MQTT Broker!")
+        log.info(f'Connected to MQTT Broker: {userdata}')
     else:
         log.error("Failed to connect, return code %d\n", rc)
 
-def on_disconnect(client, userdata, rc):
+def on_zendure_disconnect(client, userdata, rc):
     if rc != 0:
         log.warning("Unexpected disconnection.")
-        mqtt_background_task()
+        zendure_mqtt_background_task()
 
-def connect_mqtt(client_id) -> mqtt_client:
-    global client
-    client = mqtt_client.Client(client_id)
-    client.username_pw_set(username="zenApp", password="oK#PCgy6OZxd")
-    client.reconnect_delay_set(min_delay=1, max_delay=120)
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.connect(broker, port)
-    return client
+def on_local_disconnect(client, userdata, rc):
+    if rc != 0:
+        log.warning("Unexpected disconnection.")
+        local_mqtt_background_task()
 
-def connect_local_mqtt():
+def connect_zendure_mqtt(client_id) -> mqtt_client:
+    global zendure_client
+    zendure_client = mqtt_client.Client(client_id=client_id, userdata="Zendure Production MQTT")
+    zendure_client.username_pw_set(username="zenApp", password="oK#PCgy6OZxd")
+    zendure_client.reconnect_delay_set(min_delay=1, max_delay=120)
+    zendure_client.on_connect = on_connect
+    zendure_client.on_disconnect = on_zendure_disconnect
+    zendure_client.connect(broker, port)
+    return zendure_client
+
+def connect_local_mqtt(client_id) -> mqtt_client:
     global local_client
     global local_port
-    local_client = mqtt_client.Client(client_id="solarflow-statuspage")
+    log.info(f'Connecting to MQTT with: {client_id}')
+    local_client = mqtt_client.Client(client_id=client_id, userdata=f'Local MQTT ({local_broker}:{local_port})')
     if MQTT_USER is not None and MQTT_PW is not None:
         local_client.username_pw_set(MQTT_USER, MQTT_PW)
     local_client.reconnect_delay_set(min_delay=1, max_delay=120)
     local_client.on_connect = on_connect
-    local_client.on_disconnect = on_disconnect
+    local_client.on_disconnect = on_local_disconnect
     local_client.connect(local_broker,local_port)
     return local_client
 
-def subscribe(client: mqtt_client, auth: ZenAuth):
-    # list of topics to subscribe
+def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
     report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
     iot_topic = f'iot/{auth.productKey}/{auth.deviceKey}/#'
     client.subscribe(report_topic)
     client.subscribe(iot_topic)
-    client.on_message = on_message
+    client.on_message = on_zendure_message
 
-def subscribe_local(client: mqtt_client):
+def local_subscribe(client: mqtt_client):
+    log.info(f'Subscribing to topics...')
     telemetry_topic = "solarflow-hub/telemetry/#"
     client.subscribe(telemetry_topic)
+    client.subscribe("/73bkTV/+/properties/report")
     client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
@@ -220,29 +237,31 @@ def get_auth() -> ZenAuth:
         log.info(f'Zendure Auth: {auth}')
         return auth
 
-def mqtt_background_task():
+def zendure_mqtt_background_task():
     client = None
-    #while client is None:
-    try:
-        auth = get_auth()
-        #client = connect_mqtt(auth.clientId)
-    except:
-        log.warning("Connecting to MQTT broker failed!")
-        time.sleep(10)
+    while client is None:
+        try:
+            auth = get_auth()
+            client = connect_zendure_mqtt(auth.clientId)
+        except:
+            log.exception("Connecting to Zendure's MQTT broker failed!")
+            time.sleep(10)
 
-    #subscribe(client,auth)
-    #client.loop_start()
+    zendure_subscribe(client,auth)
+    client.loop_start()
 
 def local_mqtt_background_task():
     client = None
     while client is None:
         try:
-            client = connect_local_mqtt()
+            log.info(f'Connectiong local MQTT: {local_broker}:{local_port}')
+            client_id = f'solarflow-statuspage-{random.randint(0, 100)}'
+            client = connect_local_mqtt(client_id)
         except:
-            log.warning("Connecting to local MQTT broker failed!")
+            log.exception("Connecting to local MQTT broker failed!")
             time.sleep(10)
     
-    subscribe_local(client)
+    local_subscribe(client)
     client.loop_start()
 
 @app.route('/')
@@ -256,32 +275,52 @@ def connect():
     log.info('Client connected')
 
     #emit device info we have collected on startup (may not be the full accurate data)
-    socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': device_details["electricLevel"], 'date':  round(time.time()*1000)})
+    if "electricLevel" in device_details:
+        socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': device_details["electricLevel"], 'date':  round(time.time()*1000)})
 
-    for battery in device_details["packDataList"]:
-        socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': battery["socLevel"], 'date': battery["sn"]})
-        socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': battery["maxTemp"]/10 if battery["maxTemp"] < 1000 else battery["maxTemp"]/100  , 'date': battery["sn"]})
+    if "packDataList" in device_details:
+        for battery in device_details["packDataList"]:
+            socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': battery["socLevel"], 'date': battery["sn"]})
+            socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': battery["maxTemp"]/10 if battery["maxTemp"] < 1000 else battery["maxTemp"]/100  , 'date': battery["sn"]})
 
+def set_local_limit(payload):
+    local_client.publish(f'iot/{device_details["productKey"]}/{device_details["deviceKey"]}/properties/write', payload)
+
+def set_zendure_limit(payload):
+    zendure_client.publish(f'iot/{device_details["productKey"]}/{device_details["deviceKey"]}/properties/write', payload)
 
 @socketio.on('setLimit')
 def setLimit(msg):
-    global local_client
-    
     jmsg = json.loads(msg)
-    log.info(jmsg)
     payload = {"properties": { jmsg["property"]: int(jmsg["value"]) }}
     log.info(json.dumps(payload))
-    local_client.publish(f'iot/{auth.productKey}/{auth.deviceKey}/properties/write', json.dumps(payload))
+    if offline_mode:
+        set_local_limit(json.dumps(payload))
+    else:
+        set_zendure_limit(json.dumps(payload))
 
 @socketio.on('disconnect')
 def disconnect():
     log.info('Client disconnected')
 
-if __name__ == '__main__':
-    # starting mqtt network loop
-    mqtt_background_task()
+@click.command()
+@click.option("--offline/--online", default=True, help="Online/Offline mode: either connect to the Zendure API/MQTT or not (requires local MQTT with hub data present)")
+#@click.option("--online", default=False, help="Work in online mode, connecting to the Zendure API (requires User/Pwd) and to Zendures MQTT to get data")
+def setup(offline):
+    global offline_mode
+    offline_mode = offline
+    if offline:
+        # connect to local mqtt
+        local_mqtt_background_task()
+    else:
+        if ZEN_USER is None or ZEN_PASSWD is None:
+            log.error("No username and password environment variable set (environment variable ZEN_USER, ZEN_PASSWD)!")
+            sys.exit(0)
+            
+        # starting mqtt network loop
+        zendure_mqtt_background_task()
 
-    # connect to local mqtt
-    local_mqtt_background_task()
-    
     socketio.run(app,host="0.0.0.0",allow_unsafe_werkzeug=True)
+
+if __name__ == '__main__':
+    setup()

@@ -52,7 +52,7 @@
           <div class="hero">
             <table width="100%">
               <tr>
-                <td class="key">Batteries:</td><td class="value">{{ packNum }}</td>
+                <td class="key">Batteries:</td><td class="value" id="state-packNum">{{ packNum }}</td>
               </tr>
               <tr>
                 <td class="key">Max Charge Level:</td><td class="value" id="state-socSet">{{ socSet/10 }} %</td>
@@ -112,20 +112,12 @@
           <form class="form-inline" id="form-outputHomeLimit">
             <div class="form-group mx-sm-3 mb-2">
               <label for="outputHomeLimit" class="sr-only">Limit</label>
-              <input type="number" class="form-control" id="outputHomeLimit" min="1" max="800" placeholder="100">
+              <input type="number" class="form-control" id="outputHomeLimit" min="0" max="800" placeholder="100">
             </div>
-            <button type="submit" class="btn btn-primary mb-2">Set Limit</button>
+            <button type="submit" class="btn btn-primary mb-2">Output Limit</button>
           </form>
         </div>
-        <div class="col-sm">
-          <form class="form-inline" id="form-solarInputLimit">
-            <div class="form-group mx-sm-3 mb-2">
-              <label for="solarInputLimit" class="sr-only">Limit</label>
-              <input type="number" class="form-control" id="solarInputLimit" min="1" max="1100" placeholder="100">
-            </div>
-            <button type="submit" class="btn btn-primary mb-2">Set Limit</button>
-          </form>
-        </div>
+        <div class="col-sm"></div>
         <div class="col-sm"></div>
       </div>
       <div class="row">
@@ -159,7 +151,7 @@
           <form class="form-inline" id="form-socSet">
             <div class="form-group mx-sm-3 mb-2">
               <label for="socSet" class="sr-only">Limit</label>
-              <input type="number" class="form-control" id="socSet" min="20" max="100" placeholder="100">
+              <input type="number" class="form-control" id="socSet" min="0" max="100" placeholder="100">
             </div>
             <button type="submit" class="btn btn-primary mb-2">Charge Limit</button>
           </form>
@@ -168,7 +160,7 @@
           <form class="form-inline" id="form-minSoc">
             <div class="form-group mx-sm-3 mb-2">
               <label for="minSoc" class="sr-only">Limit</label>
-              <input type="number" class="form-control" id="minSoc" min="5" max="100" placeholder="10">
+              <input type="number" class="form-control" id="minSoc" min="0" max="100" placeholder="10">
             </div>
             <button type="submit" class="btn btn-primary mb-2">Discharge Limit</button>
           </form>
