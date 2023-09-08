@@ -126,7 +126,7 @@ def on_local_message(client, userdata, msg):
     if "properties/write" in msg.topic:
         if not offline_mode:
             log.info("Online mode: forwarding limit command to Zendure Cloud")
-            set_zendure_limit(json.dumps(payload))
+            set_zendure_limit(payload)
 
     if "batteries" in msg.topic:
         sn = msg.topic.split('/')[-2]
