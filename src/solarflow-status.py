@@ -54,8 +54,8 @@ def get_current_datetime():
 def on_zendure_message(client, userdata, msg):
     global device_details
     global local_client
-    payload = msg.payload.decode()
-    if "properties/report" in msg.topic:
+    payload = json.loads(msg.payload.decode())
+    if "properties/report" in msg.topic and "properties" in payload:
         log.info(payload["properties"])
         if "outputHomePower" in payload["properties"]:
             local_client.publish("solarflow-hub/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
