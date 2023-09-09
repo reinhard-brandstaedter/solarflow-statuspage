@@ -117,7 +117,7 @@ def on_local_message(client, userdata, msg):
     payload = msg.payload.decode()
 
     # determine deviceID and productID
-    if "properties/report/write" in msg.topic:
+    if "properties/report" in msg.topic:
         parts = msg.topic.split('/')
         device_details["productKey"] = parts[1]
         device_details["deviceKey"] = parts[2]
