@@ -4,7 +4,7 @@ The Solarflow Statuspage is an alternative to the mobile app. It gives a quick o
 It also allows you manually to control the output to home and the battery charging/discahrgin limits.
 Additionally the statuspage can push the data it reads from Zendure's cloud service to a local MQTT broker so that you can use it for further processing (e.g. homeautomation integration).
 
-<img src="/img/statuspage.png" width="250px" />
+<img src="/img/statuspage.png" width="450px" />
 
 
 ## How to use
@@ -15,7 +15,7 @@ You will need a Zendure Account. This is the login information you would also us
 
 ### Online/Offline mode
 The statuspage has two ways to aquire the hubs telemetry data: online/offline.
-In *online* mode it will connect to Zendure's Cloud MQTT to retrieve the telemtry data. You will need to provide your Zendure credentials (```ZEN_USER``` and ```ZEN_PASSWD``) as environment variables.
+In *online* mode it will connect to Zendure's Cloud MQTT to retrieve the telemtry data. You will need to provide your Zendure credentials (```ZEN_USER``` and ```ZEN_PASSWD```) as environment variables.
 In *offline* mode it expects the telemetry data already reported (and transformed) in your local MQTT. This is an advanced usecase where you'll need to take you hub offline first (see [solarflow-bt-manager](https://github.com/reinhard-brandstaedter/solarflow-bt-manager) how to achieve this) 
 
 ### Run in Docker
