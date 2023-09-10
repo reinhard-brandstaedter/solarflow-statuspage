@@ -19,7 +19,7 @@ ZEN_PASSWD = os.environ.get('ZEN_PASSWD',None)
 MQTT_HOST = os.environ.get('MQTT_HOST',None)
 MQTT_PORT = os.environ.get('MQTT_PORT',1883)
 MQTT_USER = os.environ.get('MQTT_USER',None)
-MQTT_PW = os.environ.get('MQTT_PW',None)
+MQTT_PW = os.environ.get('MQTT_PWD',None)
 
 
 if MQTT_HOST is None:

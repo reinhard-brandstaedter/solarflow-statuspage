@@ -17,3 +17,4 @@ zipp==3.8.1
 requests
 simple-websocket
 paho-mqtt
+click
