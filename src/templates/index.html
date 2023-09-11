@@ -34,11 +34,12 @@
           <div class="hero">
             <table width="100%">
               <tr>
-                <td class="key">Product:</td><td class="value">{{ productName }}</td>
+                <td class="key">Serial #:</td><td class="value" id="state-snNumber">{{ snNumber }}</td>
               </tr>
               <tr>
-                <td class="key">Serial #:</td><td class="value">{{ snNumber }}</td>
+                <td class="key">Master Firmware:</td><td class="value" id="state-masterSoftVersion">{{ maserSoftVersion }}</td>
               </tr>
+              <tr>
               <tr>
                 <td class="key">WiFi:</td><td class="value">{{ wifiName }} ({{ wifiState }})</td>
               </tr>
@@ -70,10 +71,9 @@
                 <td class="key">Max Inverter Input:</td><td class="value" id="state-inverseMaxPower">{{ inverseMaxPower }} W</td>
               </tr>
               <tr>
-                <td class="key">Input Limit:</td><td class="value" id="state-inputLimit">{{ inputLimit }} W</td>
+                <td class="key">Output Limit:</td><td class="value" id="state-outputLimit">{{ outputLimit }} W</td>
               </tr>
               <tr>
-                <td class="key">Output Limit:</td><td class="value" id="state-outputLimit">{{ outputLimit }} W</td>
               </tr>
             </table>
           </div>
