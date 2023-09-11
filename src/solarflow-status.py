@@ -88,6 +88,9 @@ def on_zendure_message(client, userdata, msg):
         if "minSoc" in payload["properties"]:
             socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload["properties"]["minSoc"]/10} %'})
             device_details["minSoc"] = payload["properties"]["minSoc"]
+        if "inverseMaxPower" in payload["properties"]:
+            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload} W'})
+            device_details["inverseMaxPower"] = payload["properties"]["inverseMaxPower"]
             
     if "packData" in payload:
         log.info(payload["packData"])    
@@ -179,11 +182,11 @@ def on_local_message(client, userdata, msg):
             socketio.emit('updateLimit', {'property': 'packNum', 'value': f'{payload}'})
             device_details["packNum"] = payload
         if "wifiState" == property:
-            socketio.emit('updateLimit', {'property': 'wifiState', 'value': f'{payload} W'})
+            socketio.emit('updateLimit', {'property': 'wifiState', 'value': f'{bool(int(payload))}'})
             device_details["wifiState"] = payload
         if "masterSoftVersion" == property:
             socketio.emit('updateLimit', {'property': 'masterSoftVersion', 'value': softVersion(payload)})
-            device_details["wifiState"] = payload
+            device_details["masterSoftVersion"] = payload
 
 
 

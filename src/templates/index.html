@@ -37,14 +37,11 @@
                 <td class="key">Serial #:</td><td class="value" id="state-snNumber">{{ snNumber }}</td>
               </tr>
               <tr>
-                <td class="key">Master Firmware:</td><td class="value" id="state-masterSoftVersion">{{ maserSoftVersion }}</td>
+                <td class="key">Master Firmware:</td><td class="value" id="state-masterSoftVersion">{{ masterSoftVersion }}</td>
               </tr>
               <tr>
               <tr>
-                <td class="key">WiFi:</td><td class="value">{{ wifiName }} ({{ wifiState }})</td>
-              </tr>
-              <tr>
-                <td class="key">IP:</td><td class="value">{{ ip }}</td>
+                <td class="key">WiFi connected:</td><td class="value" id="state-wifiState">{{ wifiState }}</td>
               </tr>
             </table>
           </div>
@@ -117,7 +114,15 @@
             <button type="submit" class="btn btn-primary mb-2">Output Limit</button>
           </form>
         </div>
-        <div class="col-sm"></div>
+        <div class="col-sm">
+          <form class="form-inline" id="form-inverseMaxPowerLimit">
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="inverseMaxPowerLimit" class="sr-only">Limit</label>
+              <input type="number" class="form-control" id="inverseMaxPowerLimit" min="0" max="800" placeholder="100">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Inverter Input</button>
+          </form>
+        </div>
         <div class="col-sm"></div>
       </div>
       <div class="row">
