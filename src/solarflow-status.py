@@ -38,7 +38,7 @@ local_port = MQTT_PORT
 local_client: mqtt_client
 offline_mode: bool
 auth: ZenAuth
-device_details = {"productName": "n/a", "snNumber": "n/a", "wifiName": "n/a", "wifiState": "n/a", "ip": "n/a", "packNum": "0", "socSet": 0, "minSoc": 0, "inverseMaxPower":0, "inputLimit":0, "outputLimit":0}
+device_details = {"productName": "n/a", "snNumber": "n/a", "wifiName": "n/a", "wifiState": "n/a", "ip": "n/a", "packNum": "0", "socSet": 0, "minSoc": 0, "inverseMaxPower":0, "outputLimit":0}
 
 # Flask SocketIO background task
 thread = None
@@ -50,6 +50,12 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 def get_current_datetime():
     now = datetime.now()
     return now.strftime("%H:%M:%S")
+
+def softVersion(version: int):
+    major = (version & 0xf000) >> 12
+    minor = (version & 0x0f00) >> 8
+    build = (version & 0x00ff)
+    return f'{major}.{minor}.{build}'
 
 def on_zendure_message(client, userdata, msg):
     global device_details
@@ -76,15 +82,15 @@ def on_zendure_message(client, userdata, msg):
         if "outputLimit" in payload["properties"]:
             socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload["properties"]["outputLimit"]} W'})
             device_details["outputLimit"] = payload["properties"]["outputLimit"]
-        if "inputLimit" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'inputLimit', 'value': f'{payload["properties"]["inputLimit"]} W'})
-            device_details["inputLimit"] = payload["properties"]["inputLimit"]
         if "socSet" in payload["properties"]:
             socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload["properties"]["socSet"]/10} %'})
             device_details["socSet"] = payload["properties"]["socSet"]
         if "minSoc" in payload["properties"]:
             socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload["properties"]["minSoc"]/10} %'})
             device_details["minSoc"] = payload["properties"]["minSoc"]
+        if "inverseMaxPower" in payload["properties"]:
+            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload} W'})
+            device_details["inverseMaxPower"] = payload["properties"]["inverseMaxPower"]
             
     if "packData" in payload:
         log.info(payload["packData"])    
@@ -122,6 +128,13 @@ def on_local_message(client, userdata, msg):
         device_details["productKey"] = parts[1]
         device_details["deviceKey"] = parts[2]
 
+    # determine serial number from log messages
+    if "log" in msg.topic:
+        payload = json.loads(payload)
+        if "log" in payload:
+            #device_details["snNumber"] = payload["log"]["sn"]
+            socketio.emit('updateLimit', {'property': 'snNumber', 'value': f'{payload["log"]["sn"]}'})
+
     # act as a forwarder for write commands on local MQTT
     if "properties/write" in msg.topic:
         if not offline_mode:
@@ -156,9 +169,6 @@ def on_local_message(client, userdata, msg):
         if "outputLimit" == property:
             socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
             device_details["outputLimit"] = payload
-        if "inputLimit" == property:
-            socketio.emit('updateLimit', {'property': 'inputLimit', 'value': f'{payload} W'})
-            device_details["inputLimit"] = payload
         if "socSet" == property:
             socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload/10} %'})
             device_details["socSet"] = payload
@@ -172,8 +182,12 @@ def on_local_message(client, userdata, msg):
             socketio.emit('updateLimit', {'property': 'packNum', 'value': f'{payload}'})
             device_details["packNum"] = payload
         if "wifiState" == property:
-            socketio.emit('updateLimit', {'property': 'wifiState', 'value': f'{payload} W'})
+            socketio.emit('updateLimit', {'property': 'wifiState', 'value': f'{bool(int(payload))}'})
             device_details["wifiState"] = payload
+        if "masterSoftVersion" == property:
+            socketio.emit('updateLimit', {'property': 'masterSoftVersion', 'value': softVersion(payload)})
+            device_details["masterSoftVersion"] = payload
+
 
 
 def on_connect(client, userdata, flags, rc):
@@ -227,6 +241,7 @@ def local_subscribe(client: mqtt_client):
     telemetry_topic = "solarflow-hub/telemetry/#"
     client.subscribe(telemetry_topic)
     client.subscribe("/73bkTV/+/properties/report")
+    client.subscribe("/73bkTV/+/log")
     client.subscribe("iot/73bkTV/+/properties/write")
     client.on_message = on_local_message
 
