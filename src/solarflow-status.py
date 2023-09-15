@@ -97,14 +97,19 @@ def on_zendure_message(client, userdata, msg):
         if len(payload["packData"]) >= 1:
             for pack in payload["packData"]:
                 if "socLevel" in pack:
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/socLevel',pack["socLevel"])
                     socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': pack["sn"]})
                 if "maxTemp" in pack:
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/maxTemp',pack["maxTemp"])
                     socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': pack["maxTemp"]/100, 'date': pack["sn"]})
                 if "minVol" in pack:
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/minVol',pack["minVol"])
                     socketio.emit('updateSensorData', {'metric': 'minVol', 'value': pack["minVol"]/100, 'date': pack["sn"]})
                 if "maxVol" in pack:
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/maxVol',pack["maxVol"])
                     socketio.emit('updateSensorData', {'metric': 'maxVol', 'value': pack["maxVol"]/100, 'date': pack["sn"]})
                 if "totalVol" in pack:
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/totalVol',pack["totalVol"])
                     socketio.emit('updateSensorData', {'metric': 'totalVol', 'value': pack["totalVol"]/100, 'date': pack["sn"]})
                 
             for dev_pack in device_details["packDataList"]:
@@ -115,6 +120,7 @@ def on_zendure_message(client, userdata, msg):
                     if "maxTemp" in pack:
                         if dev_pack["sn"] == pack["sn"]:
                             dev_pack["maxTemp"] = pack["maxTemp"]
+
 
 
 def on_local_message(client, userdata, msg):
@@ -148,8 +154,10 @@ def on_local_message(client, userdata, msg):
 
         if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
             socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
+        if property in ["power"]:
+            socketio.emit('updateSensorData', {'metric': "batteryPower", 'value': payload, 'sn': sn, 'date': round(time.time()*1000)})
 
-    if "solarflow-hub" in msg.topic:
+    elif "solarflow-hub" in msg.topic:
         try:
             payload = int(payload)
         except:
