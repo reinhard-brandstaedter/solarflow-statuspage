@@ -120,20 +120,12 @@
               <label for="inverseMaxPowerLimit" class="sr-only">Limit</label>
               <input type="number" class="form-control" id="inverseMaxPowerLimit" min="0" max="800" placeholder="100">
             </div>
-            <button type="submit" class="btn btn-primary mb-2">Inverter Input</button>
+            <button type="submit" class="btn btn-primary mb-2">Inverter Input Limit</button>
           </form>
         </div>
         <div class="col-sm"></div>
       </div>
       <div class="row">
-        <div class="col-sm">
-          <div class="hero">
-            <h1>Average Battery level (%)</h1>
-            <div class="chart-container">
-              <canvas id="electricLevel" width="200" height="100"></canvas>
-            </div>
-          </div>
-        </div>
         <div class="col-sm">
           <div class="hero">
             <h1>Battery Temperature (˚C)</h1>
@@ -144,9 +136,17 @@
         </div>
         <div class="col-sm">
           <div class="hero">
-            <h1>Battery State of Charge (%)</h1>
+            <h1>Battery State of Charge (<span id="cur-electricLevel"></span> %)</h1>
             <div class="chart-container">
               <canvas id="socLevel" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="hero">
+            <h1>Battery Power</h1>
+            <div class="chart-container">
+              <canvas id="batteryPower" width="200" height="100"></canvas>
             </div>
           </div>
         </div>
@@ -172,7 +172,6 @@
         </div>
         <div class="col-sm"></div>
       </div>
-
       <div class="row">
         <div class="col-sm">
           <div class="hero">

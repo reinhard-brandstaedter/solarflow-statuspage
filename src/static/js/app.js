@@ -4,7 +4,11 @@ $(document).ready(function () {
   const outputHome = new Chart(outputHomectx, {
     type: "line",
     data: {
-      datasets: [{ label: "Output to Home (W)"}, {fill: "origin"}],
+      datasets: [{
+        label: "Output to Home (W)",
+        fill: "origin",
+        spanGaps: false
+      }],
     },
     options: {
       borderWidth: 1,
@@ -42,7 +46,11 @@ $(document).ready(function () {
   const solarInput = new Chart(solarInputctx, {
     type: "line",
     data: {
-      datasets: [{ label: "Solar Input (W)"}, {fill: "origin"}],
+      datasets: [{
+        label: "Solar Input (W)",
+        fill: "origin",
+        spanGaps: false
+      }],
     },
     options: {
       borderWidth: 1,
@@ -79,7 +87,11 @@ $(document).ready(function () {
   const outputPack = new Chart(outputPackctx, {
     type: "line",
     data: {
-      datasets: [{ label: "Charging/Discharging (W)"}, {fill: "origin"}],
+      datasets: [{
+        label: "Charging/Discharging (W)",
+        fill: "origin",
+        spanGaps: false
+      }],
     },
     options: {
       borderWidth: 1,
@@ -107,46 +119,6 @@ $(document).ready(function () {
         },
         y: {
           beginAtZero: true
-        }
-      }
-    },
-  });
-
-  const electricLevelctx = document.getElementById("electricLevel").getContext("2d");
-  const electricLevel = new Chart(electricLevelctx, {
-    type: "line",
-    tension: 0.4,
-    data: {
-      datasets: [{ label: "Average Battery Level" }, {fill: "origin"}],
-    },
-    options: {
-      borderWidth: 1,
-      borderColor: ['rgba(98, 214, 158, 1)',],
-      backgroundColor: ['rgba(98, 214, 158, 1)',],
-      elements: {
-        point:{
-            radius: 0
-        }
-      },
-      plugins: {
-        legend: {
-            display: false,
-        }
-      },
-      scales: {
-        x: {
-          type: "time",
-          time: {
-            unit: "minute",
-            displayFormats: {
-              minute: "HH:mm"
-            }
-          }
-        },
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: "˚C"
         }
       }
     },
@@ -200,7 +172,7 @@ $(document).ready(function () {
     data: {
       datasets: [
         { 
-          label: "Battery State of Charge",
+          label: "State of Charge",
           borderRadius: 7,
           borderSkipped: "bottom"
         }
@@ -237,6 +209,75 @@ $(document).ready(function () {
             drawBorder: false,
             display: false,
           },
+        }
+      }
+    },
+  });
+
+  function getTimeSeriesLabels() {
+    ts = []
+    now = Date.now()
+    ts.push(now)
+    for (i=0; i++; i<30) {
+      ts.unshift(now-60)
+    }
+
+  }
+
+  const batteryPowerctx = document.getElementById("batteryPower").getContext("2d");
+  const timeseries_labels = getTimeSeriesLabels();
+  const batteryPower = new Chart(batteryPowerctx, {
+    type: "bar",
+    data: {
+      datasets: [
+        {
+          label: '',
+          borderColor: 'rgb(255, 0, 0)',
+        },
+        {
+          label: '',
+          borderColor: 'rgb(0, 255, 0)',
+        }, 
+        {
+          label: '',
+          borderColor: 'rgb(0, 0, 255)',
+        },
+        {
+          label: '',
+          orderColor: 'rgb(0, 0, 0)',
+        }
+      ],
+    },
+    options: {
+      borderWidth: 1,
+      borderColor: ['rgba(95, 170, 145, 1)',],
+      backgroundColor: ['rgba(175, 218, 208, 1)',],
+      elements: {
+        point:{
+            radius: 0
+        }
+      },
+      plugins: {
+        legend: {
+            display: false,
+        }
+      },
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "minute",
+            displayFormats: {
+              minute: "HH:mm"
+            }
+          },
+          ticks: {
+            source: "auto"
+          }
+        },
+        y: {
+          stacked: false,
+          beginAtZero: true
         }
       }
     },
@@ -413,36 +454,73 @@ $(document).ready(function () {
     document.getElementById("cur-" + metric).textContent = data
   }
 
-  function addData(label, metric, data) {
-    singletons = ["socLevel","maxTemp","totalVol","minVol","maxVol"]
-    remove = false
-    if (singletons.includes(metric)) {
-      idx = eval(metric).data.labels.indexOf(label)
-      remove = (idx >= 0)
-      if (remove) {
-        eval(metric).data.labels.splice(idx,1)
+  function seriesExists(datasets, label) {
+    for (dataset of datasets) {
+      if (label == dataset.label) {
+        return true
       }
     }
-    eval(metric).data.labels.push(label);
+  }
 
-    // if its a timeseries chart make sure we only display 30minutes
-    timeseries = ["outputHome","solarInput","outputPack","electricLevel"]
-    if (timeseries.includes(metric)) {
-      eval(metric).options.scales.x.min = Date.now()-900000
+  function addData(label, metric, data, series) {
+    singletons = ["socLevel","maxTemp","totalVol","minVol","maxVol"]
+    remove = false
+    chart = Chart.getChart(metric);
+
+    if (singletons.includes(metric)) {
+      idx = chart.data.labels.indexOf(label)
+      remove = (idx >= 0)
+      if (remove) {
+        chart.data.labels.splice(idx,1)
+      }
     }
 
-    eval(metric).data.datasets.forEach((dataset) => {
+    // if its a timeseries chart make sure we only display 30minutes
+    timeseries = ["outputHome","solarInput","outputPack","electricLevel","batteryPower"]
+    if (timeseries.includes(metric)) {
+      chart.options.scales.x.min = Date.now()-900000
+    }
+
+    chart = Chart.getChart(metric);
+
+    exists = false
+    if (series != '') {
+      exists = seriesExists(chart.data.datasets, series)
+    }
+
+    for (const [i, dataset] of chart.data.datasets.entries()) {
+      if (i == 0) {
+        chart.data.labels.push(label);
+        //console.log("Idx: "+i+" label: "+label+ " dataset: "+dataset)
+      }
       if (remove) {
         dataset.data.splice(idx,1)
       }
-      dataset.data.push(data);
+      if (series !=  '') {
+        date = new Date(label);
+        dateFormat = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+        if (dataset.label == series) {
+          //console.log("Dataset update: " + dateFormat +" " + series)
+          //console.log(chart.data.labels)
+          dataset.data.push(data);
+        }
+        if ((dataset.label == '') && (!exists)) {
+          //console.log("Dataset add label: " + dateFormat +" " + series)
+          dataset.label = series
+          dataset.data.push(data);
+          break
+        }
+      } else {
+        dataset.data.push(data);
+      }
+
       // for those where we only display one value sort it by label
       if (singletons.includes(metric)) {
-        eval(metric).data.labels.sort(sortDps())
+        chart.data.labels.sort(sortDps())
         //console.log(eval(metric).data.labels)
       }
-    });
-    eval(metric).update();
+    }
+    chart.update();
   }
 
   function sortDps(){
@@ -459,8 +537,9 @@ $(document).ready(function () {
   }
 
   function removeFirstData(metric) {
-    eval(metric).data.labels.splice(0, 1);
-    eval(metric).data.datasets.forEach((dataset) => {
+    chart = Chart.getChart(metric);
+    chart.data.labels.splice(0, 1);
+    chart.data.datasets.forEach((dataset) => {
       dataset.data.shift();
     });
   }
@@ -475,11 +554,16 @@ $(document).ready(function () {
     //console.log("Received sensorData: "+ msg.date + "::" + msg.metric + " :: " + msg.value);
 
     // Show only MAX_DATA_COUNT data
-    if (eval(msg.metric).data.labels.length > MAX_DATA_COUNT) {
-      removeFirstData(msg.metric);
+    charts = ["outputHome","solarInput","outputPack","batteryPower","totalVol","maxVol","minVol","maxTemp","socLevel"]
+    if (charts.includes(msg.metric)) {
+      chart = Chart.getChart(msg.metric);
+      if (chart.data.labels.length > MAX_DATA_COUNT) {
+        removeFirstData(msg.metric);
+      }
+      addData(msg.date, msg.metric, msg.value, msg.sn || "");
     }
-    addData(msg.date, msg.metric, msg.value);
-    timeseries = ["outputHome","solarInput","outputPack"]
+
+    timeseries = ["outputHome","solarInput","outputPack","electricLevel"]
     if (timeseries.includes(msg.metric)) {
       updateCurValues(msg.metric, msg.value)
     }
