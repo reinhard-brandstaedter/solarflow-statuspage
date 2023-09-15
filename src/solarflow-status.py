@@ -174,6 +174,8 @@ def on_local_message(client, userdata, msg):
         if "electricLevel" == property:
             socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': int(payload), 'date': round(time.time()*1000)})
             device_details["electricLevel"] = payload
+        if "homeUsage" == property:
+            socketio.emit('updateSensorData', {'metric': 'homeUsage', 'value': int(payload), 'date': round(time.time()*1000)})
         if "outputLimit" == property:
             socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
             device_details["outputLimit"] = payload
@@ -246,8 +248,8 @@ def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
 
 def local_subscribe(client: mqtt_client):
     log.info(f'Subscribing to topics...')
-    telemetry_topic = "solarflow-hub/telemetry/#"
-    client.subscribe(telemetry_topic)
+    client.subscribe( "solarflow-hub/telemetry/#")
+    client.subscribe("solarflow-hub/control/#")
     client.subscribe("/73bkTV/+/properties/report")
     client.subscribe("/73bkTV/+/log")
     client.subscribe("iot/73bkTV/+/properties/write")

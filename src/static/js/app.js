@@ -1,5 +1,47 @@
 $(document).ready(function () {
 
+  const homeUsagectx = document.getElementById("homeUsage").getContext("2d");
+  const homeUsage = new Chart(homeUsagectx, {
+    type: "bar",
+    data: {
+      datasets: [{
+        label: "Home Power Consumption (W)",
+        fill: "origin",
+        spanGaps: false
+      }],
+    },
+    options: {
+      borderWidth: 1,
+      borderColor: ['rgba(130, 182, 223, 1)',],
+      backgroundColor: ['rgba(192, 224, 248, 1)',],
+      elements: {
+        point:{
+            radius: 0
+        }
+      },
+      plugins: {
+        legend: {
+            display: false,
+        }
+      },
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "minute",
+            displayFormats: {
+              minute: "HH:mm"
+            }
+          }
+        },
+        y: {
+          text: "W",
+          beginAtZero: true,
+        }
+      }
+    },
+  });
+
   const outputHomectx = document.getElementById("outputHome").getContext("2d");
   const outputHome = new Chart(outputHomectx, {
     type: "line",
@@ -554,7 +596,7 @@ $(document).ready(function () {
     //console.log("Received sensorData: "+ msg.date + "::" + msg.metric + " :: " + msg.value);
 
     // Show only MAX_DATA_COUNT data
-    charts = ["outputHome","solarInput","outputPack","batteryPower","totalVol","maxVol","minVol","maxTemp","socLevel"]
+    charts = ["outputHome","solarInput","outputPack","batteryPower","totalVol","maxVol","minVol","maxTemp","socLevel","homeUsage"]
     if (charts.includes(msg.metric)) {
       chart = Chart.getChart(msg.metric);
       if (chart.data.labels.length > MAX_DATA_COUNT) {
@@ -563,7 +605,7 @@ $(document).ready(function () {
       addData(msg.date, msg.metric, msg.value, msg.sn || "");
     }
 
-    timeseries = ["outputHome","solarInput","outputPack","electricLevel"]
+    timeseries = ["outputHome","solarInput","outputPack","electricLevel","homeUsage"]
     if (timeseries.includes(msg.metric)) {
       updateCurValues(msg.metric, msg.value)
     }
