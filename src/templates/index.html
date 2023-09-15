@@ -81,6 +81,18 @@
       <div class="row">
         <div class="col-sm">
           <div class="hero">
+            <h1>Home Power Meter (<span id="cur-homeUsage"></span> W)</h1>
+            <div class="chart-container">
+              <canvas id="homeUsage" width="600" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm">
+          <div class="hero">
             <h1>Output to Home (<span id="cur-outputHome"></span> W)</h1>
             <div class="chart-container">
               <canvas id="outputHome" width="200" height="100"></canvas>
@@ -198,7 +210,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </body>
 </html>
