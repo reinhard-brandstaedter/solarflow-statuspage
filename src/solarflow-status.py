@@ -17,7 +17,7 @@ log = logging.getLogger("")
 ZEN_USER = os.environ.get('ZEN_USER',None)
 ZEN_PASSWD = os.environ.get('ZEN_PASSWD',None)
 MQTT_HOST = os.environ.get('MQTT_HOST',None)
-MQTT_PORT = os.environ.get('MQTT_PORT',1883)
+MQTT_PORT = int(os.environ.get('MQTT_PORT',1883))
 MQTT_USER = os.environ.get('MQTT_USER',None)
 MQTT_PW = os.environ.get('MQTT_PWD',None)
 
