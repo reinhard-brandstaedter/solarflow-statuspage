@@ -89,7 +89,7 @@ def on_zendure_message(client, userdata, msg):
             socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload["properties"]["minSoc"]/10} %'})
             device_details["minSoc"] = payload["properties"]["minSoc"]
         if "inverseMaxPower" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload} W'})
+            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload["properties"]["inverseMaxPower"]} W'})
             device_details["inverseMaxPower"] = payload["properties"]["inverseMaxPower"]
             
     if "packData" in payload:
