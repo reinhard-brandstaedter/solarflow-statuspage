@@ -9,21 +9,36 @@ from flask_socketio import SocketIO
 import random
 from threading import Lock
 import click
+import configparser
 
 FORMAT = '%(asctime)s:%(levelname)s: %(message)s'
 logging.basicConfig(stream=sys.stdout, level="INFO", format=FORMAT)
 log = logging.getLogger("")
 
-ZEN_USER = os.environ.get('ZEN_USER',None)
-ZEN_PASSWD = os.environ.get('ZEN_PASSWD',None)
-MQTT_HOST = os.environ.get('MQTT_HOST',None)
-MQTT_PORT = int(os.environ.get('MQTT_PORT',1883))
-MQTT_USER = os.environ.get('MQTT_USER',None)
-MQTT_PW = os.environ.get('MQTT_PWD',None)
+config: configparser.ConfigParser
+def load_config():
+    config = configparser.ConfigParser()
+    try:
+        with open("config.ini","r") as cf:
+            config.read_file(cf)
+    except:
+        log.error("No configuration file (config.ini) found in execution directory! Using environment variables.")
+
+    return config
+
+config = load_config()
+
+
+ZEN_USER = config.get('zendure', 'login', fallback=None) or os.environ.get('ZEN_USER',None)
+ZEN_PASSWD = config.get('zendure', 'password', fallback=None) or os.environ.get('ZEN_PASSWD',None)
+MQTT_HOST = config.get('local', 'mqtt_host', fallback=None) or os.environ.get('MQTT_HOST',None)
+MQTT_PORT = config.getint('local', 'mqtt_port', fallback=1883) or int(os.environ.get('MQTT_PORT',1883))
+MQTT_USER = config.get('local', 'mqtt_user', fallback=None) or os.environ.get('MQTT_USER',None)
+MQTT_PWD =  config.get('local', 'mqtt_pwd', fallback=None) or os.environ.get('MQTT_PWD',None)
 
 
 if MQTT_HOST is None:
-    log.error("You need a local MQTT broker set (environment variable MQTT_HOST)!")
+    log.error("You need a local MQTT broker (set environment variable MQTT_HOST)!")
     sys.exit(0)
 
 ZenAuth = namedtuple("ZenAuth",["productKey","deviceKey","clientId"])
@@ -62,65 +77,61 @@ def on_zendure_message(client, userdata, msg):
     global local_client
     payload = json.loads(msg.payload.decode())
     if "properties/report" in msg.topic and "properties" in payload:
-        log.info(payload["properties"])
-        if "outputHomePower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/outputHomePower",payload["properties"]["outputHomePower"])
-            socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': payload["properties"]["outputHomePower"], 'date': round(time.time()*1000)})
-        if "solarInputPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/solarInputPower",payload["properties"]["solarInputPower"])
-            socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': payload["properties"]["solarInputPower"], 'date': round(time.time()*1000)})
-        if "outputPackPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/outputPackPower",payload["properties"]["outputPackPower"])
-            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -payload["properties"]["outputPackPower"], 'date': round(time.time()*1000)})
-        if "packInputPower" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/packInputPower",payload["properties"]["packInputPower"])
-            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': payload["properties"]["packInputPower"], 'date': round(time.time()*1000)})
-        if "electricLevel" in payload["properties"]:
-            local_client.publish("solarflow-hub/telemetry/electricLevel",payload["properties"]["electricLevel"])
-            socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': payload["properties"]["electricLevel"], 'date': round(time.time()*1000)})
-            device_details["electricLevel"] = payload["properties"]["electricLevel"]
-        if "outputLimit" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload["properties"]["outputLimit"]} W'})
-            device_details["outputLimit"] = payload["properties"]["outputLimit"]
-        if "socSet" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{payload["properties"]["socSet"]/10} %'})
-            device_details["socSet"] = payload["properties"]["socSet"]
-        if "minSoc" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{payload["properties"]["minSoc"]/10} %'})
-            device_details["minSoc"] = payload["properties"]["minSoc"]
-        if "inverseMaxPower" in payload["properties"]:
-            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{payload["properties"]["inverseMaxPower"]} W'})
-            device_details["inverseMaxPower"] = payload["properties"]["inverseMaxPower"]
+        properties = payload["properties"]
+        for prop, val in properties.items():
+            local_client.publish(f'solarflow-hub-test/telemetry/{prop}',val)
+
+        if "outputHomePower" in properties:
+            socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': properties["outputHomePower"], 'date': round(time.time()*1000)})
+        if "solarInputPower" in properties:
+            socketio.emit('updateSensorData', {'metric': 'solarInput', 'value': properties["solarInputPower"], 'date': round(time.time()*1000)})
+        if "outputPackPower" in properties:
+            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': -properties["outputPackPower"], 'date': round(time.time()*1000)})
+        if "packInputPower" in properties:
+            socketio.emit('updateSensorData', {'metric': 'outputPack', 'value': properties["packInputPower"], 'date': round(time.time()*1000)})
+        if "electricLevel" in properties:
+            socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': properties["electricLevel"], 'date': round(time.time()*1000)})
+            device_details["electricLevel"] = properties["electricLevel"]
+        if "outputLimit" in properties:
+            socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{properties["outputLimit"]} W'})
+            device_details["outputLimit"] = properties["outputLimit"]
+        if "socSet" in properties:
+            socketio.emit('updateLimit', {'property': 'socSet', 'value': f'{properties["socSet"]/10} %'})
+            device_details["socSet"] = properties["socSet"]
+        if "minSoc" in properties:
+            socketio.emit('updateLimit', {'property': 'minSoc', 'value': f'{properties["minSoc"]/10} %'})
+            device_details["minSoc"] = properties["minSoc"]
+        if "inverseMaxPower" in properties:
+            socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{properties["inverseMaxPower"]} W'})
+            device_details["inverseMaxPower"] = properties["inverseMaxPower"]
             
     if "packData" in payload:
-        log.info(payload["packData"])    
-        if len(payload["packData"]) >= 1:
-            for pack in payload["packData"]:
+        packdata = payload["packData"]
+        if len(packdata) > 0:
+            for pack in packdata:
+                sn = pack.pop('sn')
+                for prop, val in pack.items():
+                    local_client.publish(f'solarflow-hub-test/telemetry/batteries/{sn}/{prop}',val)
+
                 if "socLevel" in pack:
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/socLevel',pack["socLevel"])
-                    socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': pack["sn"]})
+                    socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': sn})
                 if "maxTemp" in pack:
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/maxTemp',pack["maxTemp"])
-                    socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': pack["maxTemp"]/100, 'date': pack["sn"]})
+                    socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': pack["maxTemp"]/100, 'date': sn})
                 if "minVol" in pack:
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/minVol',pack["minVol"])
-                    socketio.emit('updateSensorData', {'metric': 'minVol', 'value': pack["minVol"]/100, 'date': pack["sn"]})
+                    socketio.emit('updateSensorData', {'metric': 'minVol', 'value': pack["minVol"]/100, 'date': sn})
                 if "maxVol" in pack:
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/maxVol',pack["maxVol"])
-                    socketio.emit('updateSensorData', {'metric': 'maxVol', 'value': pack["maxVol"]/100, 'date': pack["sn"]})
+                    socketio.emit('updateSensorData', {'metric': 'maxVol', 'value': pack["maxVol"]/100, 'date': sn})
                 if "totalVol" in pack:
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{pack["sn"]}/totalVol',pack["totalVol"])
-                    socketio.emit('updateSensorData', {'metric': 'totalVol', 'value': pack["totalVol"]/100, 'date': pack["sn"]})
+                    socketio.emit('updateSensorData', {'metric': 'totalVol', 'value': pack["totalVol"]/100, 'date': sn})
                 
             for dev_pack in device_details["packDataList"]:
-                for pack in payload["packData"]:
+                for pack in packdata:
                     if "socLevel" in pack:
-                        if dev_pack["sn"] == pack["sn"]:
+                        if dev_pack["sn"] == sn:
                             dev_pack["socLevel"] = pack["socLevel"]
                     if "maxTemp" in pack:
-                        if dev_pack["sn"] == pack["sn"]:
+                        if dev_pack["sn"] == sn:
                             dev_pack["maxTemp"] = pack["maxTemp"]
-
 
 
 def on_local_message(client, userdata, msg):
@@ -231,8 +242,8 @@ def connect_local_mqtt(client_id) -> mqtt_client:
     global local_port
     log.info(f'Connecting to MQTT with: {client_id}')
     local_client = mqtt_client.Client(client_id=client_id, userdata=f'Local MQTT ({local_broker}:{local_port})')
-    if MQTT_USER is not None and MQTT_PW is not None:
-        local_client.username_pw_set(MQTT_USER, MQTT_PW)
+    if MQTT_USER is not None and MQTT_PWD is not None:
+        local_client.username_pw_set(MQTT_USER, MQTT_PWD)
     local_client.reconnect_delay_set(min_delay=1, max_delay=120)
     local_client.on_connect = on_connect
     local_client.on_disconnect = on_local_disconnect
@@ -339,12 +350,24 @@ def setLimit(msg):
 def disconnect():
     log.info('Client disconnected')
 
+def load_config():
+    config = configparser.ConfigParser()
+    with open("config.ini","r") as cf:
+        config.read_file(cf)
+    return config
+        
 @click.command()
 @click.option("--offline/--online", default=True, help="Online/Offline mode: either connect to the Zendure API/MQTT or not (requires local MQTT with hub data present)")
 #@click.option("--online", default=False, help="Work in online mode, connecting to the Zendure API (requires User/Pwd) and to Zendures MQTT to get data")
 def setup(offline):
+    global config
     global offline_mode
     offline_mode = offline
+
+    if config is None:
+        log.error("Configuration file (config.ini) not found!")
+        sys.exit(0)
+
     if offline:
         # connect to local mqtt
         local_mqtt_background_task()
@@ -358,8 +381,6 @@ def setup(offline):
 
         # connect to local mqtt
         local_mqtt_background_task()
-
-        
 
     socketio.run(app,host="0.0.0.0",allow_unsafe_werkzeug=True)
 
