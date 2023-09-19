@@ -1,6 +1,13 @@
 $(document).ready(function () {
 
   const homeUsagectx = document.getElementById("homeUsage").getContext("2d");
+  const fillGradient = homeUsagectx.createLinearGradient(0,0,0,200)
+  fillGradient.addColorStop(0,'blue')
+  fillGradient.addColorStop(0.25,'green')
+  fillGradient.addColorStop(0.50,'yellow')
+  fillGradient.addColorStop(0.75,'orange')
+  fillGradient.addColorStop(1,'red')
+  
   const homeUsage = new Chart(homeUsagectx, {
     type: "bar",
     data: {
@@ -13,7 +20,8 @@ $(document).ready(function () {
     options: {
       borderWidth: 1,
       borderColor: ['rgba(130, 182, 223, 1)',],
-      backgroundColor: ['rgba(192, 224, 248, 1)',],
+      //backgroundColor: ['rgba(192, 224, 248, 1)',],
+      backgroundColor: fillGradient,
       elements: {
         point:{
             radius: 0
