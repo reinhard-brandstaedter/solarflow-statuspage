@@ -484,7 +484,7 @@ $(document).ready(function () {
     return false;
   });
 
-  $('#form-inverseMaxPower').on('submit', function () {
+  $('#form-inverseMaxPowerLimit').on('submit', function () {
     socket.emit('setLimit', '{"property": "inverseMaxPower", "value":' + $('#inverseMaxPower').val() +'}' );
     return false;
   });
