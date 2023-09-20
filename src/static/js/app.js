@@ -484,8 +484,8 @@ $(document).ready(function () {
     return false;
   });
 
-  $('#form-solarInputLimit').on('submit', function () {
-    socket.emit('setLimit', '{"property": "inputLimit", "value":' + $('#solarInputLimit').val() +'}' );
+  $('#form-inverseMaxPower').on('submit', function () {
+    socket.emit('setLimit', '{"property": "inverseMaxPower", "value":' + $('#inverseMaxPower').val() +'}' );
     return false;
   });
 
