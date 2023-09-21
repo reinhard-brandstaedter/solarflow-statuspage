@@ -111,7 +111,7 @@ def on_zendure_message(client, userdata, msg):
             for pack in packdata:
                 sn = pack.pop('sn')
                 for prop, val in pack.items():
-                    local_client.publish(f'solarflow-hub-test/telemetry/batteries/{sn}/{prop}',val)
+                    local_client.publish(f'solarflow-hub/telemetry/batteries/{sn}/{prop}',val)
 
                 if "socLevel" in pack:
                     socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': sn})
