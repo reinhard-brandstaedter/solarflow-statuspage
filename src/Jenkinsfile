@@ -18,12 +18,12 @@ pipeline {
             steps {
                 sh 'printenv'
                 dir("${env.WORKSPACE}/src"){
-                    sh label: 'Build solarflow-statuspage', script: 'docker -H ${DOCKER_HOST} buildx build -t ${DOCKER_REGISTRY}/solarflow-statuspage:${BRANCH_NAME} .'
+                    sh label: 'Build solarflow-statuspage', script: 'docker -H ${DOCKER_HOST} buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t ${DOCKER_REGISTRY}/solarflow-statuspage:${BRANCH_NAME} .'
                 }
                 script {
                     if (env.BRANCH_NAME == 'master') {
                         dir("${env.WORKSPACE}/src"){
-                            sh label: 'Build solarflow-statuspage', script: 'docker -H ${DOCKER_HOST} buildx build -t ${DOCKER_REGISTRY}/solarflow-statuspage:${TAG} -t ${DOCKER_REGISTRY}/solarflow-statuspage:latest .'
+                            sh label: 'Build solarflow-statuspage', script: 'docker -H ${DOCKER_HOST} buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t ${DOCKER_REGISTRY}/solarflow-statuspage:${TAG} -t ${DOCKER_REGISTRY}/solarflow-statuspage:latest .'
                         }
                         dir("${env.WORKSPACE}/imageexport") {
                             sh label: 'GitHub CLI login', script: 'echo ${GITHUB_AUTH_TOKEN} | gh auth login --with-token'
