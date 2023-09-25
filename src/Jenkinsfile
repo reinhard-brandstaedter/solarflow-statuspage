@@ -30,8 +30,8 @@ pipeline {
                         dir("${env.WORKSPACE}/imageexport") {
                             sh label: 'GitHub CLI login', script: 'echo ${GITHUB_AUTH_TOKEN} | gh auth login --with-token'
                             sh label: 'GitHub CLI status', script: 'gh auth status'
-                            sh label: 'Save docker images', script: 'docker save -o solarflow-statuspage-${TAG}.tar ${DOCKER_REGISTRY}/solarflow-statuspage:${TAG}'
-                            sh label: 'Create Release', script: 'gh release create ${TAG} *-${TAG}.tar --generate-notes -t "Release ${TAG}"'
+                            //sh label: 'Save docker images', script: 'docker save -o solarflow-statuspage-${TAG}.tar ${DOCKER_REGISTRY}/solarflow-statuspage:${TAG}'
+                            sh label: 'Create Release', script: 'gh release create ${TAG} --generate-notes -t "Release ${TAG}"'
                         }
                     }
                 }
