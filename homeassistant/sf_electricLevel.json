@@ -1,0 +1,14 @@
+{
+    "name": "Battery Level",
+    "stat_t": "solarflow-hub/telemetry/electricLevel",
+    "uniq_id": "PO1HLC9LDR01938-electricLevel",
+    "dev_cla": "battery",
+    "unit_of_meas": "%",
+    "dev": {
+      "identifiers": ["solarflow_PO1HLC9LDR01938"],
+      "manufacturer": "Zendure",
+      "model": "Solarflow",
+      "name": "Solarflow Hub",
+      "sw_version": "2.0.31"
+    }
+}

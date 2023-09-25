@@ -1,0 +1,14 @@
+{
+    "name": "Output Pack Power",
+    "stat_t": "solarflow-hub/telemetry/outputPackPower",
+    "uniq_id": "PO1HLC9LDR01938-outputPackPower",
+    "dev_cla": "power",
+    "unit_of_meas": "W",
+    "dev": {
+      "identifiers": ["solarflow_PO1HLC9LDR01938"],
+      "manufacturer": "Zendure",
+      "model": "Solarflow",
+      "name": "Solarflow Hub",
+      "sw_version": "2.0.31"
+    }
+}
