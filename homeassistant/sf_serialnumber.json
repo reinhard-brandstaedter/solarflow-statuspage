@@ -1,7 +1,7 @@
 {
-    "name": "Pack Input Power",
-    "stat_t": "~packInputPower",
-    "uniq_id": "PO1HLC9LDR01938-packInputPower",
+    "name": "Serial Number",
+    "stat_t": "~solarInputPower",
+    "uniq_id": "PO1HLC9LDR01938-serial",
     "dev_cla": "power",
     "unit_of_meas": "W",
     "dev": {
