@@ -18,6 +18,7 @@ pipeline {
             steps {
                 sh 'printenv'
                 dir("${env.WORKSPACE}/src"){
+                    sh label: 'Set up X-Builder', script: 'docker buildx ls && docker buildx use crossbuilder'
                     sh label: 'Build solarflow-statuspage', script: 'docker -H ${DOCKER_HOST} buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t ${DOCKER_REGISTRY}/solarflow-statuspage:${BRANCH_NAME} .'
                 }
                 script {
