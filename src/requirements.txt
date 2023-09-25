@@ -18,3 +18,4 @@ requests
 simple-websocket
 paho-mqtt
 click
+jsontemplates

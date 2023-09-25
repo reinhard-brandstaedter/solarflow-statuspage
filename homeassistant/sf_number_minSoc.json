@@ -1,12 +1,12 @@
 {
-    "name": "Output Limit",
-    "cmd_t": "~outputLimit",
-    "max": 800,
+    "name": "Minimum Discharge Level",
+    "cmd_t": "~minSoc",
+    "max": 100,
     "min": 0,
     "step": 1,
     "stat_t": "~info",
     "unit_of_meas": "W",
-    "uniq_id": "PO1HLC9LDR01938-outputLimit",
+    "uniq_id": "PO1HLC9LDR01938-minSoc",
     "dev": {
         "identifiers": ["PO1HLC9LDR01938"],
         "manufacturer": "Zendure",
