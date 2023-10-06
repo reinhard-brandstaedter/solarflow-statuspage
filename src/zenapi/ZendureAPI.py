@@ -24,8 +24,8 @@ SF_API_BASE_URL = f'{SF_API_URL}/{SF_API_VERSION}'
 class ZendureAPI():
     ''' An API class to handle communication with the Zendure API '''
 
-    def __init__(self, verifySSL=True, parameters=None):
-        self.baseUrl = SF_API_BASE_URL
+    def __init__(self, verifySSL=True, zen_api="https://app.zendure.tech", parameters=None):
+        self.baseUrl = f'{zen_api}/{SF_API_VERSION}'
         self.verifySSL = verifySSL
         self.parameters = parameters
         self.session = None
