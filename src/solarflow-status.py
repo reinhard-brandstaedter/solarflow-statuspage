@@ -260,8 +260,10 @@ def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
 
 def local_subscribe(client: mqtt_client):
     log.info(f'Subscribing to topics...')
-    client.subscribe( "solarflow-hub/telemetry/#")
+    client.subscribe("solarflow-hub/telemetry/#")
     client.subscribe("solarflow-hub/control/#")
+    client.subscribe("solarflow-hub/+/telemetry/#")
+    client.subscribe("solarflow-hub/+/control/#")
     client.subscribe("/73bkTV/+/properties/report")
     client.subscribe("/73bkTV/+/log")
     client.subscribe("iot/73bkTV/+/properties/write")
