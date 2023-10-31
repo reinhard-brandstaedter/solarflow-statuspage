@@ -263,6 +263,7 @@ def local_subscribe(client: mqtt_client):
     client.subscribe("solarflow-hub/telemetry/#")
     client.subscribe("solarflow-hub/control/#")
     client.subscribe("solarflow-hub/+/telemetry/#")
+    client.subscribe("solarflow-hub/smartmeter/homeUsage")
     client.subscribe("solarflow-hub/+/control/#")
     client.subscribe("/73bkTV/+/properties/report")
     client.subscribe("/73bkTV/+/log")
