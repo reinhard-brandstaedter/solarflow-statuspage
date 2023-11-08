@@ -187,7 +187,7 @@ def on_local_message(client, userdata, msg):
             socketio.emit('updateSensorData', {'metric': 'electricLevel', 'value': int(payload), 'date': round(time.time()*1000)})
             device_details["electricLevel"] = payload
         if "homeUsage" == property:
-            socketio.emit('updateSensorData', {'metric': 'homeUsage', 'value': int(payload), 'date': round(time.time()*1000)})
+            socketio.emit('updateSensorData', {'metric': 'homeUsage', 'value': int(float(payload)), 'date': round(time.time()*1000)})
         if "outputLimit" == property:
             socketio.emit('updateLimit', {'property': 'outputLimit', 'value': f'{payload} W'})
             device_details["outputLimit"] = payload
