@@ -80,7 +80,7 @@ def on_zendure_message(client, userdata, msg):
     if "properties/report" in msg.topic and "properties" in payload:
         properties = payload["properties"]
         for prop, val in properties.items():
-            local_client.publish(f'solarflow-hub/telemetry/{prop}',val)
+            local_client.publish(f'solarflow-hub/{device_details["deviceKey"]}/telemetry/{prop}',val)
 
         if "outputHomePower" in properties:
             socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': properties["outputHomePower"], 'date': round(time.time()*1000)})
@@ -112,7 +112,7 @@ def on_zendure_message(client, userdata, msg):
             for pack in packdata:
                 sn = pack.pop('sn')
                 for prop, val in pack.items():
-                    local_client.publish(f'solarflow-hub/telemetry/batteries/{sn}/{prop}',val)
+                    local_client.publish(f'solarflow-hub/{device_details["deviceKey"]}/telemetry/batteries/{sn}/{prop}',val)
 
                 if "socLevel" in pack:
                     socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': sn})
