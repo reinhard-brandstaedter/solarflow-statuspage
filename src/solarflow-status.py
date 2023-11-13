@@ -171,7 +171,7 @@ def on_local_message(client, userdata, msg):
 
     elif "solarflow-hub" in msg.topic:
         try:
-            payload = int(payload)
+            payload = int(float(payload))
         except:
             log.error(f'Error converting payload to int: {payload}')
 
