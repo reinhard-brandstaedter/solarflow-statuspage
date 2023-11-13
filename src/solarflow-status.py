@@ -208,7 +208,7 @@ def on_local_message(client, userdata, msg):
                 socketio.emit('updateLimit', {'property': 'masterSoftVersion', 'value': softVersion(payload)})
                 device_details["masterSoftVersion"] = payload
         else:
-            log.warning(f'{property} is not of type int/float: {payload}')
+            log.warning(f'{property} is type {type(property)}: {payload}')
 
 
 
