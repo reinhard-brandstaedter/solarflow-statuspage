@@ -170,9 +170,12 @@ def on_local_message(client, userdata, msg):
             socketio.emit('updateSensorData', {'metric': "batteryPower", 'value': payload, 'sn': sn, 'date': round(time.time()*1000)})
 
     elif "solarflow-hub" in msg.topic:
+        try:
+            payload = float(payload)
+        except:
+            log.warning(f'{property} is type {type(property).__name__}: {payload}')
+
         if type(payload) is float or type(payload) is int:
-            payload = int(float(payload))
-    
             if "outputHomePower" == property:
                 socketio.emit('updateSensorData', {'metric': 'outputHome', 'value': int(payload), 'date': round(time.time()*1000)})
             if "solarInputPower" == property:
@@ -207,9 +210,6 @@ def on_local_message(client, userdata, msg):
             if "masterSoftVersion" == property:
                 socketio.emit('updateLimit', {'property': 'masterSoftVersion', 'value': softVersion(payload)})
                 device_details["masterSoftVersion"] = payload
-        else:
-            log.warning(f'{property} is type {type(property)}: {payload}')
-
 
 
 def on_connect(client, userdata, flags, rc):
