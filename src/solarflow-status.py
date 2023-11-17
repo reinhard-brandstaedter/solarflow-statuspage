@@ -166,10 +166,10 @@ def on_local_message(client, userdata, msg):
 
         # convert Kelvin to Celsius
         if property in ["maxTemp"]:
-            payload = float(payload)/10 - 273.15
+            payload = float(f'{float(payload)/10 - 273.15:.2f}')
 
         if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
-            socketio.emit('updateSensorData', {'metric': property, 'value': f'{payload:.2f}', 'date': sn})
+            socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
         if property in ["power"]:
             socketio.emit('updateSensorData', {'metric': "batteryPower", 'value': payload, 'sn': sn, 'date': round(time.time()*1000)})
 
