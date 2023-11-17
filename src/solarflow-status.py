@@ -117,7 +117,7 @@ def on_zendure_message(client, userdata, msg):
                 if "socLevel" in pack:
                     socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': pack["socLevel"], 'date': sn})
                 if "maxTemp" in pack:
-                    socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': pack["maxTemp"]/100, 'date': sn})
+                    socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': pack["maxTemp"]/10 - 273.15, 'date': sn})
                 if "minVol" in pack:
                     socketio.emit('updateSensorData', {'metric': 'minVol', 'value': pack["minVol"]/100, 'date': sn})
                 if "maxVol" in pack:
@@ -163,6 +163,10 @@ def on_local_message(client, userdata, msg):
         sn = msg.topic.split('/')[-2]
         if property not in  ["socLevel", "power"]:
             payload = float(payload)/100
+
+        # convert Kelvin to Celsius
+        if property in ["maxTemp"]:
+            payload = payload - 27.315
 
         if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
             socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
@@ -328,7 +332,7 @@ def connect():
     if "packDataList" in device_details:
         for battery in device_details["packDataList"]:
             socketio.emit('updateSensorData', {'metric': 'socLevel', 'value': battery["socLevel"], 'date': battery["sn"]})
-            socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': battery["maxTemp"]/10 if battery["maxTemp"] < 1000 else battery["maxTemp"]/100  , 'date': battery["sn"]})
+            socketio.emit('updateSensorData', {'metric': 'maxTemp', 'value': battery["maxTemp"]/10 - 27.315 if battery["maxTemp"] < 1000 else battery["maxTemp"]/10 - 273.15  , 'date': battery["sn"]})
 
 def set_local_limit(payload):
     global local_client
