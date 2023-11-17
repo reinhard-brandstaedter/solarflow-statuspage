@@ -169,7 +169,7 @@ def on_local_message(client, userdata, msg):
             payload = float(payload)/10 - 273.15
 
         if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
-            socketio.emit('updateSensorData', {'metric': property, 'value': f'{payload:.2f}, 'date': sn})
+            socketio.emit('updateSensorData', {'metric': property, 'value': f'{payload:.2f}', 'date': sn})
         if property in ["power"]:
             socketio.emit('updateSensorData', {'metric': "batteryPower", 'value': payload, 'sn': sn, 'date': round(time.time()*1000)})
 
