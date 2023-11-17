@@ -161,12 +161,12 @@ def on_local_message(client, userdata, msg):
 
     if "batteries" in msg.topic:
         sn = msg.topic.split('/')[-2]
-        if property not in  ["socLevel", "power"]:
+        if property not in  ["socLevel", "power","maxTemp"]:
             payload = float(payload)/100
 
         # convert Kelvin to Celsius
         if property in ["maxTemp"]:
-            payload = payload - 27.315
+            payload = payload/10 - 273.15
 
         if property in ["minVol", "maxVol", "maxTemp", "totalVol", "socLevel"]:
             socketio.emit('updateSensorData', {'metric': property, 'value': payload, 'date': sn})
