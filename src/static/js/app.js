@@ -8,7 +8,7 @@ $(document).ready(function () {
   fillGradient.addColorStop(1,'rgba(192, 224, 248, 1)')
   
   const homeUsage = new Chart(homeUsagectx, {
-    type: "bar",
+    type: "line",
     data: {
       datasets: [{
         label: "Home Power Consumption (W)",
@@ -276,7 +276,7 @@ $(document).ready(function () {
   const batteryPowerctx = document.getElementById("batteryPower").getContext("2d");
   const timeseries_labels = getTimeSeriesLabels();
   const batteryPower = new Chart(batteryPowerctx, {
-    type: "bar",
+    type: "line",
     data: {
       datasets: [
         {
