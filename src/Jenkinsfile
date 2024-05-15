@@ -27,8 +27,8 @@ pipeline {
             }
         }
         stage('Build Docker Images') {
-            container('docker-buildx') {
-                steps {
+            steps {
+                container('docker-buildx') {
                     sh 'printenv'
                     dir("${env.WORKSPACE}/src"){
                         sh label: 'Set up X-Builder', script: 'docker buildx rm crossbuilder && docker buildx create --name crossbuilder --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 && docker buildx ls && docker buildx use crossbuilder && docker buildx inspect --bootstrap'
@@ -52,8 +52,8 @@ pipeline {
             }
         }
         stage('Push Docker Images') {
-            container('docker-buildx') {
-                steps {
+            steps {
+                container('docker-buildx') {
                     sh label: 'Docker Login', script: 'docker login -u ${DOCKERHUB_LOGIN_USR} -p ${DOCKERHUB_LOGIN_PSW}'
                     dir("${env.WORKSPACE}/src") {
                         sh label: 'Push solarflow-statuspage', script: 'docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -q -t ${DOCKER_REGISTRY}/solarflow-statuspage:${BRANCH_NAME} .'
