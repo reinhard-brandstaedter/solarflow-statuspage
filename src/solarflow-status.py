@@ -105,6 +105,8 @@ def on_zendure_message(client, userdata, msg):
         if "inverseMaxPower" in properties:
             socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{properties["inverseMaxPower"]} W'})
             device_details["inverseMaxPower"] = properties["inverseMaxPower"]
+    else:
+        log.info(f'Topic: {msg.topic} read: {payload}')
             
     if "packData" in payload:
         packdata = payload["packData"]
@@ -256,7 +258,8 @@ def connect_local_mqtt(client_id) -> mqtt_client:
     return local_client
 
 def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
-    report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
+    #report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
+    report_topic = f'/{auth.productKey}/{auth.deviceKey}/#'
     iot_topic = f'iot/{auth.productKey}/{auth.deviceKey}/#'
     client.subscribe(report_topic)
     client.subscribe(iot_topic)
@@ -300,6 +303,13 @@ def zendure_mqtt_background_task():
 
     zendure_subscribe(client,auth)
     client.loop_start()
+    # request a time sync
+    payload = {
+        "messageId":"123",
+        "deviceId": auth.deviceKey,
+        "timestamp": int(time.time())
+    }
+    client.publish(f'/{auth.productKey}/{auth.deviceKey}/time-sync',json.dumps(payload))
 
 def local_mqtt_background_task():
     client = None
