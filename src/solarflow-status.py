@@ -224,12 +224,16 @@ def on_connect(client, userdata, flags, rc):
 
 def on_zendure_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected Zendure disconnection.Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         zendure_mqtt_background_task()
 
 def on_local_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected local MQTT disconnection. Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         local_mqtt_background_task()
 
 def connect_zendure_mqtt(client_id) -> mqtt_client:
