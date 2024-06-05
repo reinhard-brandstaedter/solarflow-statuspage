@@ -226,12 +226,16 @@ def on_connect(client, userdata, flags, rc):
 
 def on_zendure_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected Zendure disconnection.Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         zendure_mqtt_background_task()
 
 def on_local_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected local MQTT disconnection. Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         local_mqtt_background_task()
 
 def connect_zendure_mqtt(client_id) -> mqtt_client:
@@ -267,14 +271,17 @@ def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
 
 def local_subscribe(client: mqtt_client):
     log.info(f'Subscribing to topics...')
+    report_topic = f'/{device_details["productKey"]}/+/properties/report'
+    log_topic = f'/{device_details["productKey"]}/+/log'
+    iot_topic = f'iot/{device_details["productKey"]}/+/properties/write'
     client.subscribe("solarflow-hub/telemetry/#")
     client.subscribe("solarflow-hub/control/#")
     client.subscribe("solarflow-hub/+/telemetry/#")
     client.subscribe("solarflow-hub/+/control/#")
     client.subscribe("solarflow-hub/smartmeter/homeUsage")
-    client.subscribe("/73bkTV/+/properties/report")
-    client.subscribe("/73bkTV/+/log")
-    client.subscribe("iot/73bkTV/+/properties/write")
+    client.subscribe(report_topic)
+    client.subscribe(log_topic)
+    client.subscribe(iot_topic)
     client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
