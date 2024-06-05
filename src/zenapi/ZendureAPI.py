@@ -17,15 +17,14 @@ logging.basicConfig(stream=sys.stdout, level=loglevel, format=FORMAT)
 log = logging.getLogger(__name__)
 PROD_NAME = os.environ.get('PROD_NAME','SolarFlow2.0')
 
-SF_API_URL = "https://app.zendure.tech"
-SF_API_VERSION = "v2"
-SF_API_BASE_URL = f'{SF_API_URL}/{SF_API_VERSION}'
+SF_API_BASE_URL = "https://app.zendure.tech"
 
 class ZendureAPI():
     ''' An API class to handle communication with the Zendure API '''
 
-    def __init__(self, verifySSL=True, zen_api="https://app.zendure.tech", parameters=None):
-        self.baseUrl = f'{zen_api}/{SF_API_VERSION}'
+    def __init__(self, verifySSL=True, zen_api="https://app.zendure.tech/v2", parameters=None):
+        self.baseUrl = f'{SF_API_BASE_URL}'
+        self.zen_api = zen_api
         self.verifySSL = verifySSL
         self.parameters = parameters
         self.session = None
@@ -65,7 +64,7 @@ class ZendureAPI():
             }
         
         try:
-            url = f'{SF_API_BASE_URL}{SF_AUTH_PATH}'
+            url = f'{self.zen_api}{SF_AUTH_PATH}'
             log.info("Authenticating with Zendure ...")
             response = self.session.post(url=url, json=authBody)
             if response.ok:
@@ -83,7 +82,7 @@ class ZendureAPI():
     def get_device_list(self):
         SF_DEVICELIST_PATH = "/productModule/device/queryDeviceListByConsumerId"
         try:
-            url = f'{SF_API_BASE_URL}{SF_DEVICELIST_PATH}'
+            url = f'{self.zen_api}{SF_DEVICELIST_PATH}'
             log.info("Getting device list ...")
             response = self.session.post(url=url)
             if response.ok:
@@ -110,7 +109,7 @@ class ZendureAPI():
         SF_DEVICEDETAILS_PATH = "/device/solarFlow/detail"
         payload = {"deviceId": deviceId}
         try:
-            url = f'{SF_API_BASE_URL}{SF_DEVICEDETAILS_PATH}'
+            url = f'{self.zen_api}{SF_DEVICEDETAILS_PATH}'
             log.info(f'Getting device details for [{deviceId}] ...')
             response = self.session.post(url=url, json=payload)
             if response.ok:
