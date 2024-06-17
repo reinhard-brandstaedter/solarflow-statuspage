@@ -272,6 +272,9 @@ def local_subscribe(client: mqtt_client):
     client.subscribe("/73bkTV/+/properties/report")
     client.subscribe("/73bkTV/+/log")
     client.subscribe("iot/73bkTV/+/properties/write")
+    client.subscribe("/A8yh63/+/properties/report")
+    client.subscribe("/A8yh63/+/log")
+    client.subscribe("iot/A8yh63/+/properties/write")
     client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
