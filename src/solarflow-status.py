@@ -31,7 +31,7 @@ config = load_config()
 
 ZEN_USER = config.get('zendure', 'login', fallback=None) or os.environ.get('ZEN_USER',None)
 ZEN_PASSWD = config.get('zendure', 'password', fallback=None) or os.environ.get('ZEN_PASSWD',None)
-ZEN_API = config.get('zendure', 'zen_api', fallback='https://app.zendure.tech') or os.environ.get('ZEN_API','https://app.zendure.tech')
+ZEN_API = config.get('zendure', 'zen_api', fallback='https://app.zendure.tech/v2') or os.environ.get('ZEN_API','https://app.zendure.tech/v2')
 MQTT_HOST = config.get('local', 'mqtt_host', fallback=None) or os.environ.get('MQTT_HOST',None)
 MQTT_PORT = config.getint('local', 'mqtt_port', fallback=1883) or int(os.environ.get('MQTT_PORT',1883))
 MQTT_USER = config.get('local', 'mqtt_user', fallback=None) or os.environ.get('MQTT_USER',None)
@@ -105,6 +105,8 @@ def on_zendure_message(client, userdata, msg):
         if "inverseMaxPower" in properties:
             socketio.emit('updateLimit', {'property': 'inverseMaxPower', 'value': f'{properties["inverseMaxPower"]} W'})
             device_details["inverseMaxPower"] = properties["inverseMaxPower"]
+    else:
+        log.info(f'Topic: {msg.topic} read: {payload}')
             
     if "packData" in payload:
         packdata = payload["packData"]
@@ -224,12 +226,16 @@ def on_connect(client, userdata, flags, rc):
 
 def on_zendure_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected Zendure disconnection.Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         zendure_mqtt_background_task()
 
 def on_local_disconnect(client, userdata, rc):
     if rc != 0:
-        log.warning("Unexpected disconnection.")
+        log.warning("Unexpected local MQTT disconnection. Disconnecting reason  "  +str(rc))
+        client.loop_stop()
+        client.disconnect()
         local_mqtt_background_task()
 
 def connect_zendure_mqtt(client_id) -> mqtt_client:
@@ -256,7 +262,8 @@ def connect_local_mqtt(client_id) -> mqtt_client:
     return local_client
 
 def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
-    report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
+    #report_topic = f'/{auth.productKey}/{auth.deviceKey}/properties/report'
+    report_topic = f'/{auth.productKey}/{auth.deviceKey}/#'
     iot_topic = f'iot/{auth.productKey}/{auth.deviceKey}/#'
     client.subscribe(report_topic)
     client.subscribe(iot_topic)
@@ -264,6 +271,9 @@ def zendure_subscribe(client: mqtt_client, auth: ZenAuth):
 
 def local_subscribe(client: mqtt_client):
     log.info(f'Subscribing to topics...')
+    report_topic = f'/{device_details["productKey"]}/+/properties/report'
+    log_topic = f'/{device_details["productKey"]}/+/log'
+    iot_topic = f'iot/{device_details["productKey"]}/+/properties/write'
     client.subscribe("solarflow-hub/telemetry/#")
     client.subscribe("solarflow-hub/control/#")
     client.subscribe("solarflow-hub/+/telemetry/#")
@@ -275,6 +285,9 @@ def local_subscribe(client: mqtt_client):
     client.subscribe("/A8yh63/+/properties/report")
     client.subscribe("/A8yh63/+/log")
     client.subscribe("iot/A8yh63/+/properties/write")
+    client.subscribe(report_topic)
+    client.subscribe(log_topic)
+    client.subscribe(iot_topic)
     client.on_message = on_local_message
 
 def get_auth() -> ZenAuth:
@@ -303,6 +316,13 @@ def zendure_mqtt_background_task():
 
     zendure_subscribe(client,auth)
     client.loop_start()
+    # request a time sync
+    payload = {
+        "messageId":"123",
+        "deviceId": auth.deviceKey,
+        "timestamp": int(time.time())
+    }
+    client.publish(f'/{auth.productKey}/{auth.deviceKey}/time-sync',json.dumps(payload))
 
 def local_mqtt_background_task():
     client = None

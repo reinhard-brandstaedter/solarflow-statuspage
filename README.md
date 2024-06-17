@@ -26,6 +26,7 @@ docker pull rbrandstaedter/solarflow-statuspage:master
 ```
 
 I recommend to create a ```.env``` file in the directory where you will start the container. This file should contain your Zendure account credentials and other environment variables needed.
+
 ```
 ZEN_USER=<your zendure account>
 ZEN_PASSWD=<your zendure account password>
@@ -35,7 +36,14 @@ MQTT_USER = <mqtt user>
 MQTT_PWD = <mqtt user password>
 ```
 
-Then run the container and expose it's port to a local port. Make sure to also specify the --online option, as per default the statuspage will try to work ```offline``` (meaning it will expect the telemetry data already in MQTT, provided by an offline hub) 
+For HUB 2000 an additional environment variable is needed as follows
+
+```
+PROD_NAME=SolarFlow Hub 2000
+```
+
+Then run the container and expose it's port to a local port. Make sure to also specify the --online option, as per default the statuspage will try to work ```offline``` (meaning it will expect the telemetry data already in MQTT, provided by an offline hub)
+
 ```
 docker run --rm --env-file .env -p 127.0.0.1:5000:5000 --name solarflow-statuspage rbrandstaedter/solarflow-statuspage:master --online
 ```
